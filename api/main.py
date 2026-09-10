@@ -7,13 +7,17 @@ from fastapi.middleware.cors import CORSMiddleware
 # Supaya bisa import modul dari folder src/
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
-from pewdict import predict_from_symptoms  # noqa: E402
-from api.api_schemas import SymptomRequest, PredictionResponse  # noqa: E402
+
+from pewdict import predict_from_symptoms
+from api.api_schemas import SymptomRequest, PredictionResponse
+
 
 app = FastAPI(
     title="Disease Prediction API",
     description="API prediksi penyakit dari checklist gejala.",
 )
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,15 +26,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 def read_root():
-    return {"status": "ok", "message": "Disease Prediction API is running"}
+    return {
+        "status": "ok",
+        "message": "Disease Prediction API is running"
+    }
 
 
 @app.post("/predict", response_model=PredictionResponse)
 def predict(request: SymptomRequest):
     if not request.symptoms:
-        raise HTTPException(status_code=400, detail="Daftar gejala tidak boleh kosong")
+        raise HTTPException(
+            status_code=400,
+            detail="Daftar gejala tidak boleh kosong"
+        )
 
-    hasil = predict_from_symptoms(request.symptoms)
+    hasil = predict_from_symptoms(
+        symptoms=request.symptoms,
+        asked=request.asked,
+    )
+
     return hasil
