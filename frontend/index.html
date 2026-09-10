@@ -3,485 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Symptom Checker</title>
+<title>HealthBot — Asisten Kesehatan AI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #F7F8F6;
-    --surface: #FFFFFF;
-    --border: #DCE1DE;
-    --text: #1C1F1E;
-    --text-muted: #5B645F;
-    --accent: #2B6E63;
-    --accent-light: #E4EFEC;
-    --warn: #B3541E;
-  }
-
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'IBM Plex Sans', system-ui, sans-serif;
-    line-height: 1.5;
-  }
-
-  main {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 48px 24px 80px;
-  }
-
-  h1 {
-    font-size: 28px;
-    font-weight: 600;
-    margin: 0 0 8px;
-  }
-
-  p.lead {
-    color: var(--text-muted);
-    margin: 0 0 32px;
-    max-width: 52ch;
-  }
-
-  input[type="text"] {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 15px;
-    font-family: inherit;
-    background: var(--surface);
-  }
-  input[type="text"]:focus {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-  }
-
-  #selected-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 14px 0;
-    min-height: 20px;
-  }
-
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--accent-light);
-    color: var(--accent);
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 13px;
-    font-weight: 500;
-  }
-  .chip button {
-    border: none;
-    background: none;
-    color: var(--accent);
-    cursor: pointer;
-    font-size: 14px;
-    line-height: 1;
-    padding: 0;
-  }
-
-  #symptom-list {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-    max-height: 280px;
-    overflow-y: auto;
-    margin-top: 4px;
-  }
-
-  .symptom-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 14px;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-    cursor: pointer;
-  }
-  .symptom-row:last-child { border-bottom: none; }
-  .symptom-row:hover { background: var(--bg); }
-  .symptom-row input { accent-color: var(--accent); }
-
-  button#submit-btn {
-    margin-top: 20px;
-    width: 100%;
-    padding: 13px;
-    border: none;
-    border-radius: 6px;
-    background: var(--accent);
-    color: white;
-    font-size: 15px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-  }
-  button#submit-btn:hover { background: #235952; }
-  button#submit-btn:disabled { background: var(--text-muted); cursor: not-allowed; }
-
-  #results {
-    margin-top: 36px;
-  }
-
-  #results h2 {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-muted);
-    margin: 0 0 14px;
-  }
-
-  .result-row {
-    margin-bottom: 12px;
-  }
-  .result-row .label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-    margin-bottom: 4px;
-  }
-  .result-row .value {
-    font-family: 'IBM Plex Mono', monospace;
-    color: var(--text-muted);
-    font-size: 13px;
-  }
-  #followup-box{
-    margin-top: 24px;
-    padding: 18px;
-    border: 11px solid var(--accent);
-    border-radius: 8px;
-    background: var(--accent-light);
-  }
-  .followup-text { margin: 0 0 12px; font-weight: 600; }
-  .followup-actions { display: flex; gap:  10px; }
-  .followup-actions button {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid var(--accent);
-    border-radius: 6px;
-    background: white;
-    color: var(--accent);
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-  }
-  .followup-actions .btn-yes { background: var(--accent); color: white; }
-
-  #info-box { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); }
-  #info-box h2 { font-size: 15px; color: var(--text-muted); margin: 0 0 10px; }
-  #info-box h3 { font-size: 13px; color: var(--text-muted); margin: 16px 0 8px; }
-  #info-box .description { font-size: 14px; line-height: 1.6; }
-  #info-box .precaution-list { margin: 0; padding-left: 18px; font-size: 14px; }
-  #info-box .precaution-list li { margin-bottom: 4px; text-transform: capitalize; }
-  .bar-track {
-    height: 8px;
-    background: var(--accent-light);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  .bar-fill {
-    height: 100%;
-    background: var(--accent);
-  }
-  .result-row.primary .label { font-weight: 600; }
-  .result-row.primary .bar-fill { background: var(--accent); }
-
-  #error-box {
-    display: none;
-    margin-top: 16px;
-    padding: 12px 14px;
-    border-left: 3px solid var(--warn);
-    background: #FBF0E9;
-    color: var(--warn);
-    font-size: 14px;
-    border-radius: 4px;
-  }
+:root{--bg:#f4f7f6;--card:#fff;--border:#e2e8e5;--text:#17211e;--muted:#68736f;--accent:#24796b;--accent-dark:#1b5f54;--soft:#e6f2ef;--user:#24796b;--danger:#b94b32;--shadow:0 12px 35px rgba(23,33,30,.08)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,system-ui,sans-serif;color:var(--text);background:var(--bg)}
+body{display:flex;justify-content:center}.app{width:100%;max-width:850px;min-height:100vh;background:var(--card);display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.header{height:76px;padding:0 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.96);position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:var(--soft);display:grid;place-items:center;font-size:22px}.brand h1{font-size:16px;margin:0;font-weight:700}.brand p{font-size:11px;color:var(--muted);margin:3px 0 0}.online{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}.dot{width:7px;height:7px;background:#36a269;border-radius:50%}
+.chat{flex:1;padding:28px 24px 140px;overflow-y:auto}.welcome{text-align:center;max-width:540px;margin:28px auto 34px}.welcome-icon{font-size:42px}.welcome h2{font-size:25px;margin:12px 0 8px}.welcome p{color:var(--muted);font-size:14px;line-height:1.7;margin:0}.disclaimer{margin:18px auto 0;padding:10px 13px;border:1px solid var(--border);background:#fafcfb;border-radius:10px;font-size:11px;color:var(--muted);line-height:1.5}
+.message{display:flex;gap:10px;margin:18px 0;animation:appear .25s ease}.message.user{justify-content:flex-end}.avatar{width:32px;height:32px;border-radius:10px;background:var(--soft);display:grid;place-items:center;flex:none;font-size:16px}.bubble{max-width:min(72%,560px);padding:12px 15px;border-radius:16px;background:#f1f4f3;font-size:14px;line-height:1.6}.user .bubble{background:var(--user);color:#fff;border-bottom-right-radius:5px}.bot .bubble{border-bottom-left-radius:5px}.time{font-size:10px;color:var(--muted);margin-top:5px}.user .time{text-align:right}
+.quick{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 25px 42px}.quick button,.answer-btn{border:1px solid #cddbd7;background:#fff;color:var(--accent);padding:9px 13px;border-radius:20px;font:500 12px Inter;cursor:pointer;transition:.2s}.quick button:hover,.answer-btn:hover{background:var(--soft);border-color:var(--accent)}
+.result-card{margin:8px 0 20px 42px;max-width:560px;border:1px solid var(--border);border-radius:16px;padding:17px;background:#fff;box-shadow:0 5px 18px rgba(23,33,30,.05)}.result-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}.candidate{margin:11px 0}.candidate-head{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-bottom:6px}.candidate-head span:last-child{color:var(--muted);font-size:12px}.track{height:7px;background:#edf2f0;border-radius:10px;overflow:hidden}.fill{height:100%;background:var(--accent);border-radius:10px}.primary-name{font-weight:700}.followup{margin:8px 0 24px 42px;padding:16px;border:1px solid #cfe1dc;background:var(--soft);border-radius:16px;max-width:560px}.followup p{margin:0 0 12px;font-size:14px;font-weight:600}.answers{display:flex;gap:8px}.answers button{flex:1;border-radius:10px}.answers .yes{background:var(--accent);color:#fff;border-color:var(--accent)}
+.typing{display:flex;align-items:center;gap:5px;padding:4px 2px}.typing span{width:6px;height:6px;border-radius:50%;background:#8b9893;animation:bounce 1s infinite}.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+.composer-wrap{position:fixed;bottom:0;width:min(850px,100%);padding:12px 20px 18px;background:linear-gradient(transparent,#fff 24%);z-index:4}.composer{display:flex;align-items:flex-end;gap:9px;border:1px solid #ccd8d4;border-radius:16px;background:#fff;padding:7px 8px 7px 14px;box-shadow:0 7px 25px rgba(23,33,30,.1)}textarea{border:0;outline:0;resize:none;flex:1;font:14px Inter;line-height:1.5;max-height:110px;padding:7px 0;background:transparent}textarea::placeholder{color:#89938f}.send{width:40px;height:40px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-size:18px;cursor:pointer}.send:disabled{background:#a9b5b1;cursor:not-allowed}.helper{text-align:center;color:#89938f;font-size:10px;margin-top:7px}.error{margin:10px 42px;padding:10px 12px;border-left:3px solid var(--danger);background:#fff2ee;color:var(--danger);border-radius:7px;font-size:12px}
+.restart{display:block;margin:0 auto 25px;border:0;background:none;color:var(--accent);font:500 12px Inter;cursor:pointer}.hidden{display:none!important}@keyframes appear{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+@media(max-width:600px){.header{height:68px;padding:0 16px}.chat{padding:18px 15px 135px}.bubble{max-width:84%}.quick,.result-card,.followup{margin-left:42px}.welcome h2{font-size:22px}.composer-wrap{padding:10px 10px 15px}.online{display:none}}
 </style>
 </head>
 <body>
-<main>
-  <h1>Symptom Checker</h1>
-  <p class="lead">Pilih gejala yang dialami, lalu lihat kemungkinan penyakitnya menurut model.</p>
-
-  <input type="text" id="search-box" placeholder="Cari gejala, mis. demam, ruam...">
-  <div id="selected-chips"></div>
-  <div id="symptom-list"></div>
-
-  <button id="submit-btn">Cek Kemungkinan Penyakit</button>
-  <div id="error-box"></div>
-
-  <div id="results" style="display:none">
-    <h2>Hasil Prediksi</h2>
-    <div id="results-list"></div>
-  </div>
-
-  <div id="followup-box" style="display:none">
-  <p class="followup-text"></p>
-  <div class="followup-actions">
-    <button class="btn-yes">Ya</button>
-    <button class="btn-no">Tidak</button>
-  </div>
-</div>
-
-<div id="info-box" style="display:none">
-  <h2>Tentang Kondisi Ini</h2>
-  <p class="description"></p>
-  <h3>Saran Tindakan</h3>
-  <ul class="precaution-list"></ul>
-</div>
+<div class="app">
+<header class="header"><div class="brand"><div class="logo">🩺</div><div><h1>HealthBot</h1><p>Asisten Kesehatan AI</p></div></div><div class="online"><span class="dot"></span> Online</div></header>
+<main class="chat" id="chat">
+<section class="welcome" id="welcome"><div class="welcome-icon">🩺</div><h2>Halo, saya HealthBot</h2><p>Ceritakan keluhan yang sedang Anda rasakan. Saya akan membantu menganalisis gejala dan memberikan beberapa kemungkinan berdasarkan model yang digunakan.</p><div class="disclaimer">Informasi ini bersifat edukasi dan bukan pengganti diagnosis atau pemeriksaan tenaga kesehatan.</div></section>
+<div class="quick" id="quick"><button data-symptom="headache">🤕 Sakit kepala</button><button data-symptom="high_fever">🌡️ Demam</button><button data-symptom="cough">😷 Batuk</button><button data-symptom="nausea">Mual</button><button data-symptom="muscle_pain">Nyeri otot</button><button data-symptom="back_pain">Sakit pinggang</button></div>
+<div id="messages"></div>
+<button class="restart hidden" id="restart">↻ Mulai percakapan baru</button>
 </main>
-
+<div class="composer-wrap"><div class="composer"><textarea id="message" rows="1" placeholder="Ceritakan keluhan Anda..."></textarea><button class="send" id="send" title="Kirim">➤</button></div><div class="helper">Tekan Enter untuk mengirim • Shift + Enter untuk baris baru</div></div>
+</div>
 <script>
-  const API_URL = "http://127.0.0.1:8000/predict";
-
-const SYMPTOMS = ["itching","skin_rash","nodal_skin_eruptions","continuous_sneezing","shivering","chills","joint_pain","stomach_pain","acidity","ulcers_on_tongue","muscle_wasting","vomiting","burning_micturition","spotting_urination","fatigue","weight_gain","anxiety","cold_hands_and_feets","mood_swings","weight_loss","restlessness","lethargy","patches_in_throat","irregular_sugar_level","cough","high_fever","sunken_eyes","breathlessness","sweating","dehydration","indigestion","headache","yellowish_skin","dark_urine","nausea","loss_of_appetite","pain_behind_the_eyes","back_pain","constipation","abdominal_pain","diarrhoea","mild_fever","yellow_urine","yellowing_of_eyes","acute_liver_failure","fluid_overload","swelling_of_stomach","swelled_lymph_nodes","malaise","blurred_and_distorted_vision","phlegm","throat_irritation","redness_of_eyes","sinus_pressure","runny_nose","congestion","chest_pain","weakness_in_limbs","fast_heart_rate","pain_during_bowel_movements","pain_in_anal_region","bloody_stool","irritation_in_anus","neck_pain","dizziness","cramps","bruising","obesity","swollen_legs","swollen_blood_vessels","puffy_face_and_eyes","enlarged_thyroid","brittle_nails","swollen_extremeties","excessive_hunger","extra_marital_contacts","drying_and_tingling_lips","slurred_speech","knee_pain","hip_joint_pain","muscle_weakness","stiff_neck","swelling_joints","movement_stiffness","spinning_movements","loss_of_balance","unsteadiness","weakness_of_one_body_side","loss_of_smell","bladder_discomfort","foul_smell_of urine","continuous_feel_of_urine","passage_of_gases","internal_itching","toxic_look_(typhos)","depression","irritability","muscle_pain","altered_sensorium","red_spots_over_body","belly_pain","abnormal_menstruation","dischromic _patches","watering_from_eyes","increased_appetite","polyuria","family_history","mucoid_sputum","rusty_sputum","lack_of_concentration","visual_disturbances","receiving_blood_transfusion","receiving_unsterile_injections","coma","stomach_bleeding","distention_of_abdomen","history_of_alcohol_consumption","fluid_overload.1","blood_in_sputum","prominent_veins_on_calf","palpitations","painful_walking","pus_filled_pimples","blackheads","scurring","skin_peeling","silver_like_dusting","small_dents_in_nails","inflammatory_nails","blister","red_sore_around_nose","yellow_crust_ooze"];
-
-const SYMPTOM_LABELS = {
-  "itching": "Gatal", "skin_rash": "Ruam Kulit", "nodal_skin_eruptions": "Bintil pada Kulit",
-  "continuous_sneezing": "Bersin Terus-menerus", "shivering": "Menggigil", "chills": "Kedinginan",
-  "joint_pain": "Nyeri Sendi", "stomach_pain": "Nyeri Lambung", "acidity": "Asam Lambung",
-  "ulcers_on_tongue": "Luka pada Lidah", "muscle_wasting": "Penyusutan Otot", "vomiting": "Muntah",
-  "burning_micturition": "Nyeri saat Buang Air Kecil", "spotting_urination": "Bercak saat Buang Air Kecil",
-  "fatigue": "Kelelahan", "weight_gain": "Kenaikan Berat Badan", "anxiety": "Cemas",
-  "cold_hands_and_feets": "Tangan dan Kaki Dingin", "mood_swings": "Perubahan Suasana Hati",
-  "weight_loss": "Penurunan Berat Badan", "restlessness": "Gelisah", "lethargy": "Lesu",
-  "patches_in_throat": "Bercak di Tenggorokan", "irregular_sugar_level": "Kadar Gula Tidak Stabil",
-  "cough": "Batuk", "high_fever": "Demam Tinggi", "sunken_eyes": "Mata Cekung",
-  "breathlessness": "Sesak Napas", "sweating": "Berkeringat", "dehydration": "Dehidrasi",
-  "indigestion": "Gangguan Pencernaan", "headache": "Sakit Kepala", "yellowish_skin": "Kulit Kekuningan",
-  "dark_urine": "Urine Gelap", "nausea": "Mual", "loss_of_appetite": "Kehilangan Nafsu Makan",
-  "pain_behind_the_eyes": "Nyeri di Belakang Mata", "back_pain": "Nyeri Punggung",
-  "constipation": "Sembelit", "abdominal_pain": "Nyeri Perut", "diarrhoea": "Diare",
-  "mild_fever": "Demam Ringan", "yellow_urine": "Urine Kuning", "yellowing_of_eyes": "Mata Menguning",
-  "acute_liver_failure": "Gagal Hati Akut", "fluid_overload": "Kelebihan Cairan Tubuh",
-  "swelling_of_stomach": "Perut Membengkak", "swelled_lymph_nodes": "Kelenjar Getah Bening Membengkak",
-  "malaise": "Badan Tidak Enak", "blurred_and_distorted_vision": "Penglihatan Kabur dan Terdistorsi",
-  "phlegm": "Dahak", "throat_irritation": "Iritasi Tenggorokan", "redness_of_eyes": "Mata Merah",
-  "sinus_pressure": "Tekanan pada Sinus", "runny_nose": "Hidung Berair", "congestion": "Hidung Tersumbat",
-  "chest_pain": "Nyeri Dada", "weakness_in_limbs": "Lemas pada Anggota Gerak",
-  "fast_heart_rate": "Detak Jantung Cepat", "pain_during_bowel_movements": "Nyeri saat Buang Air Besar",
-  "pain_in_anal_region": "Nyeri di Area Anus", "bloody_stool": "Feses Berdarah",
-  "irritation_in_anus": "Iritasi pada Anus", "neck_pain": "Nyeri Leher", "dizziness": "Pusing",
-  "cramps": "Kram", "bruising": "Memar", "obesity": "Obesitas", "swollen_legs": "Kaki Bengkak",
-  "swollen_blood_vessels": "Pembuluh Darah Membengkak", "puffy_face_and_eyes": "Wajah dan Mata Bengkak",
-  "enlarged_thyroid": "Kelenjar Tiroid Membesar", "brittle_nails": "Kuku Rapuh",
-  "swollen_extremeties": "Anggota Tubuh Membengkak", "excessive_hunger": "Rasa Lapar Berlebihan",
-  "extra_marital_contacts": "Kontak Seksual di Luar Nikah", "drying_and_tingling_lips": "Bibir Kering dan Kesemutan",
-  "slurred_speech": "Bicara Pelo", "knee_pain": "Nyeri Lutut", "hip_joint_pain": "Nyeri Sendi Panggul",
-  "muscle_weakness": "Kelemahan Otot", "stiff_neck": "Leher Kaku", "swelling_joints": "Sendi Bengkak",
-  "movement_stiffness": "Kekakuan Gerak", "spinning_movements": "Sensasi Berputar",
-  "loss_of_balance": "Kehilangan Keseimbangan", "unsteadiness": "Tubuh Tidak Stabil",
-  "weakness_of_one_body_side": "Kelemahan pada Satu Sisi Tubuh", "loss_of_smell": "Kehilangan Penciuman",
-  "bladder_discomfort": "Tidak Nyaman pada Kandung Kemih", "foul_smell_of urine": "Urine Berbau Tidak Sedap",
-  "continuous_feel_of_urine": "Rasa Ingin Buang Air Kecil Terus-menerus", "passage_of_gases": "Sering Kentut",
-  "internal_itching": "Gatal di Dalam Tubuh", "toxic_look_(typhos)": "Wajah Tampak Toksik (Tifus)",
-  "depression": "Depresi", "irritability": "Mudah Tersinggung", "muscle_pain": "Nyeri Otot",
-  "altered_sensorium": "Kesadaran Menurun", "red_spots_over_body": "Bintik Merah di Tubuh",
-  "belly_pain": "Nyeri Perut Bawah", "abnormal_menstruation": "Menstruasi Tidak Normal",
-  "dischromic _patches": "Bercak Perubahan Warna Kulit", "watering_from_eyes": "Mata Berair",
-  "increased_appetite": "Nafsu Makan Meningkat", "polyuria": "Sering Buang Air Kecil",
-  "family_history": "Riwayat Keluarga dengan Penyakit Serupa", "mucoid_sputum": "Dahak Berlendir",
-  "rusty_sputum": "Dahak Berwarna Karat", "lack_of_concentration": "Sulit Berkonsentrasi",
-  "visual_disturbances": "Gangguan Penglihatan", "receiving_blood_transfusion": "Riwayat Transfusi Darah",
-  "receiving_unsterile_injections": "Riwayat Suntikan Tidak Steril", "coma": "Koma",
-  "stomach_bleeding": "Perdarahan Lambung", "distention_of_abdomen": "Perut Kembung",
-  "history_of_alcohol_consumption": "Riwayat Konsumsi Alkohol", "fluid_overload.1": "Kelebihan Cairan Tubuh (2)",
-  "blood_in_sputum": "Darah dalam Dahak", "prominent_veins_on_calf": "Pembuluh Darah Menonjol di Betis",
-  "palpitations": "Jantung Berdebar", "painful_walking": "Nyeri saat Berjalan",
-  "pus_filled_pimples": "Jerawat Bernanah", "blackheads": "Komedo", "scurring": "Bekas Luka",
-  "skin_peeling": "Kulit Mengelupas", "silver_like_dusting": "Sisik Keperakan pada Kulit",
-  "small_dents_in_nails": "Lekukan Kecil pada Kuku", "inflammatory_nails": "Peradangan pada Kuku",
-  "blister": "Lepuh", "red_sore_around_nose": "Luka Merah di Sekitar Hidung",
-  "yellow_crust_ooze": "Keluar Cairan Berkerak Kuning"
-};
-
-const DISEASE_LABELS = {
-  "Fungal infection": "Infeksi Jamur", "Allergy": "Alergi", "GERD": "GERD (Asam Lambung Naik)",
-  "Chronic cholestasis": "Kolestasis Kronis", "Drug Reaction": "Reaksi Obat",
-  "Peptic ulcer diseae": "Tukak Lambung", "AIDS": "AIDS", "Diabetes ": "Diabetes",
-  "Gastroenteritis": "Gastroenteritis", "Bronchial Asthma": "Asma Bronkial",
-  "Hypertension ": "Hipertensi", "Migraine": "Migrain", "Cervical spondylosis": "Spondilosis Servikal",
-  "Paralysis (brain hemorrhage)": "Kelumpuhan (Pendarahan Otak)", "Jaundice": "Penyakit Kuning",
-  "Malaria": "Malaria", "Chicken pox": "Cacar Air", "Dengue": "Demam Berdarah Dengue",
-  "Typhoid": "Tifus", "hepatitis A": "Hepatitis A", "Hepatitis B": "Hepatitis B",
-  "Hepatitis C": "Hepatitis C", "Hepatitis D": "Hepatitis D", "Hepatitis E": "Hepatitis E",
-  "Alcoholic hepatitis": "Hepatitis Alkoholik", "Tuberculosis": "Tuberkulosis (TBC)",
-  "Common Cold": "Flu Biasa", "Pneumonia": "Pneumonia (Radang Paru)",
-  "Dimorphic hemmorhoids(piles)": "Wasir (Ambeien)", "Heart attack": "Serangan Jantung",
-  "Varicose veins": "Varises", "Hypothyroidism": "Hipotiroidisme", "Hyperthyroidism": "Hipertiroidisme",
-  "Hypoglycemia": "Hipoglikemia (Gula Darah Rendah)", "Osteoarthristis": "Osteoartritis",
-  "Arthritis": "Artritis (Radang Sendi)", "(vertigo) Paroymsal  Positional Vertigo": "Vertigo Posisional Paroksismal",
-  "Acne": "Jerawat", "Urinary tract infection": "Infeksi Saluran Kemih", "Psoriasis": "Psoriasis",
-  "Impetigo": "Impetigo"
-};
-
-let confirmedSymptoms = new Set();
-let askedSymptoms = new Set();
-
-function renderSymptomList(filter = "") {
-  const container = document.getElementById("symptom-list");
-  const q = filter.toLowerCase();
-  container.innerHTML = "";
-  SYMPTOMS
-    .filter(s => SYMPTOM_LABELS[s].toLowerCase().includes(q) || s.toLowerCase().includes(q))
-    .forEach(s => {
-      const row = document.createElement("label");
-      row.className = "symptom-row";
-      row.innerHTML = `
-        <input type="checkbox" value="${s}" ${confirmedSymptoms.has(s) ? "checked" : ""}>
-        <span>${SYMPTOM_LABELS[s]}</span>
-      `;
-      row.querySelector("input").addEventListener("change", (e) => {
-        e.target.checked ? confirmedSymptoms.add(s) : confirmedSymptoms.delete(s);
-        renderChips();
-      });
-      container.appendChild(row);
-    });
-}
-
-function renderChips() {
-  const chipBox = document.getElementById("selected-chips");
-  chipBox.innerHTML = "";
-  confirmedSymptoms.forEach(s => {
-    const chip = document.createElement("span");
-    chip.className = "chip";
-    chip.innerHTML = `${SYMPTOM_LABELS[s]} <button aria-label="Hapus ${SYMPTOM_LABELS[s]}">×</button>`;
-    chip.querySelector("button").addEventListener("click", () => {
-      confirmedSymptoms.delete(s);
-      renderChips();
-      renderSymptomList(document.getElementById("search-box").value);
-    });
-    chipBox.appendChild(chip);
-  });
-}
-
-document.getElementById("search-box").addEventListener("input", (e) => {
-  renderSymptomList(e.target.value);
-});
-
-async function callPredictAPI() {
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      symptoms: Array.from(confirmedSymptoms),
-      asked: Array.from(askedSymptoms),
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || "Terjadi kesalahan di server");
-  }
-  return res.json();
-}
-
-document.getElementById("submit-btn").addEventListener("click", async () => {
-  const errorBox = document.getElementById("error-box");
-  errorBox.style.display = "none";
-
-  if (confirmedSymptoms.size === 0) {
-    errorBox.textContent = "Pilih minimal 1 gejala dulu.";
-    errorBox.style.display = "block";
-    return;
-  }
-
-  askedSymptoms = new Set(confirmedSymptoms);
-
-  const btn = document.getElementById("submit-btn");
-  btn.disabled = true;
-  btn.textContent = "Memproses...";
-
-  try {
-    const data = await callPredictAPI();
-    renderConversationResult(data);
-  } catch (err) {
-    errorBox.textContent = `Gagal memanggil API: ${err.message}. Pastikan server (uvicorn) sedang berjalan di ${API_URL}.`;
-    errorBox.style.display = "block";
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Cek Kemungkinan Penyakit";
-  }
-});
-
-function renderConversationResult(data) {
-  renderCandidates(data.kandidat);
-
-  const followupBox = document.getElementById("followup-box");
-  const infoBox = document.getElementById("info-box");
-
-  if (data.next_question) {
-    infoBox.style.display = "none";
-    renderFollowUp(data.next_question);
-  } else {
-    followupBox.style.display = "none";
-    if (data.info_penyakit) {
-      infoBox.style.display = "block";
-      infoBox.querySelector(".description").textContent = data.info_penyakit.deskripsi;
-      const list = infoBox.querySelector(".precaution-list");
-      list.innerHTML = "";
-      data.info_penyakit.precaution.forEach((p) => {
-        const li = document.createElement("li");
-        li.textContent = p;
-        list.appendChild(li);
-      });
-    }
-  }
-}
-
-function renderFollowUp(symptomKey) {
-  const box = document.getElementById("followup-box");
-  box.style.display = "block";
-  box.querySelector(".followup-text").textContent =
-    `Apakah Anda juga mengalami ${SYMPTOM_LABELS[symptomKey] || symptomKey}?`;
-
-  box.querySelector(".btn-yes").onclick = () => answerFollowUp(symptomKey, true);
-  box.querySelector(".btn-no").onclick = () => answerFollowUp(symptomKey, false);
-}
-
-async function answerFollowUp(symptomKey, isYes) {
-  askedSymptoms.add(symptomKey);
-  if (isYes) confirmedSymptoms.add(symptomKey);
-
-  document.getElementById("followup-box").style.display = "none";
-
-  try {
-    const data = await callPredictAPI();
-    renderConversationResult(data);
-  } catch (err) {
-    const errorBox = document.getElementById("error-box");
-    errorBox.textContent = `Gagal memanggil API: ${err.message}`;
-    errorBox.style.display = "block";
-  }
-}
-
-function renderCandidates(kandidat) {
-  const list = document.getElementById("results-list");
-  list.innerHTML = "";
-  kandidat.forEach((k, i) => {
-    const row = document.createElement("div");
-    row.className = "result-row" + (i === 0 ? " primary" : "");
-    row.innerHTML = `
-      <div class="label">
-        <span>${DISEASE_LABELS[k.penyakit] || k.penyakit}</span>
-        <span class="value">${(k.probabilitas * 100).toFixed(1)}%</span>
-      </div>
-      <div class="bar-track">
-        <div class="bar-fill" style="width:${k.probabilitas * 100}%"></div>
-      </div>
-    `;
-    list.appendChild(row);
-  });
-  document.getElementById("results").style.display = "block";
-}
-
-renderSymptomList();
+const API_URL='http://127.0.0.1:8000/predict';
+const confirmedSymptoms=new Set();
+const askedSymptoms=new Set();
+const SYMPTOM_LABELS={itching:'gatal',skin_rash:'ruam kulit',continuous_sneezing:'bersin terus-menerus',shivering:'menggigil',chills:'kedinginan',joint_pain:'nyeri sendi',stomach_pain:'nyeri lambung',acidity:'asam lambung',vomiting:'muntah',burning_micturition:'nyeri saat buang air kecil',fatigue:'kelelahan',weight_gain:'kenaikan berat badan',anxiety:'cemas',weight_loss:'penurunan berat badan',restlessness:'gelisah',lethargy:'lesu',cough:'batuk',high_fever:'demam tinggi',breathlessness:'sesak napas',sweating:'berkeringat',dehydration:'dehidrasi',indigestion:'gangguan pencernaan',headache:'sakit kepala',yellowish_skin:'kulit kekuningan',dark_urine:'urine gelap',nausea:'mual',loss_of_appetite:'kehilangan nafsu makan',pain_behind_the_eyes:'nyeri di belakang mata',back_pain:'nyeri punggung',constipation:'sembelit',abdominal_pain:'nyeri perut',diarrhoea:'diare',mild_fever:'demam ringan',yellowing_of_eyes:'mata menguning',swelling_of_stomach:'perut membengkak',swelled_lymph_nodes:'kelenjar getah bening membengkak',malaise:'badan terasa tidak enak',phlegm:'dahak',throat_irritation:'iritasi tenggorokan',redness_of_eyes:'mata merah',runny_nose:'hidung berair',congestion:'hidung tersumbat',chest_pain:'nyeri dada',fast_heart_rate:'detak jantung cepat',dizziness:'pusing',cramps:'kram',bruising:'memar',swollen_legs:'kaki bengkak',excessive_hunger:'rasa lapar berlebihan',slurred_speech:'bicara pelo',knee_pain:'nyeri lutut',hip_joint_pain:'nyeri sendi panggul',muscle_weakness:'kelemahan otot',stiff_neck:'leher kaku',swelling_joints:'sendi bengkak',loss_of_balance:'kehilangan keseimbangan',loss_of_smell:'kehilangan penciuman',bladder_discomfort:'rasa tidak nyaman pada kandung kemih',continuous_feel_of_urine:'sering ingin buang air kecil',passage_of_gases:'sering buang gas',internal_itching:'gatal dari dalam',depression:'depresi',irritability:'mudah marah',muscle_pain:'nyeri otot',red_spots_over_body:'bintik merah di tubuh',belly_pain:'nyeri perut',watering_from_eyes:'mata berair',increased_appetite:'nafsu makan meningkat',polyuria:'sering buang air kecil',mucoid_sputum:'dahak berlendir',rusty_sputum:'dahak berwarna kecokelatan',visual_disturbances:'gangguan penglihatan',blood_in_sputum:'batuk berdarah',palpitations:'jantung berdebar',painful_walking:'nyeri saat berjalan',pus_filled_pimples:'jerawat bernanah',blackheads:'komedo',skin_peeling:'kulit mengelupas',blister:'lepuhan kulit'};
+const ALIASES={demam:['high_fever','mild_fever'],panas:['high_fever','mild_fever'],'sakit kepala':['headache'],'kepala sakit':['headache'],'pusing':['dizziness'],'batuk':['cough'],'sesak':['breathlessness'],'sesak napas':['breathlessness'],'mual':['nausea'],'muntah':['vomiting'],'nyeri otot':['muscle_pain'],'pegal':['muscle_pain'],'pegal pegal':['muscle_pain'],'sakit pinggang':['back_pain'],'nyeri pinggang':['back_pain'],'sakit punggung':['back_pain'],'nyeri punggung':['back_pain'],'diare':['diarrhoea'],'mencret':['diarrhoea'],'pilek':['runny_nose'],'hidung berair':['runny_nose'],'hidung tersumbat':['congestion'],'lemas':['fatigue'],'badan lemas':['fatigue'],'menggigil':['shivering'],'nyeri sendi':['joint_pain'],'sakit perut':['abdominal_pain'],'nyeri perut':['abdominal_pain'],'sakit lambung':['stomach_pain'],'mata merah':['redness_of_eyes'],'mata berair':['watering_from_eyes']};
+const messages=document.getElementById('messages'), textarea=document.getElementById('message'), send=document.getElementById('send'), welcome=document.getElementById('welcome'), quick=document.getElementById('quick'), restart=document.getElementById('restart');
+function label(k){return SYMPTOM_LABELS[k]||k.replaceAll('_',' ')}
+function addMessage(text,type='bot'){const row=document.createElement('div');row.className=`message ${type}`;row.innerHTML=type==='bot'?`<div class="avatar">🩺</div><div><div class="bubble">${escapeHtml(text)}</div><div class="time">HealthBot</div></div>`:`<div><div class="bubble">${escapeHtml(text)}</div><div class="time">Anda</div></div>`;messages.appendChild(row);scrollBottom();return row}
+function addTyping(){const row=document.createElement('div');row.className='message bot';row.id='typing';row.innerHTML='<div class="avatar">🩺</div><div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>';messages.appendChild(row);scrollBottom()}
+function removeTyping(){document.getElementById('typing')?.remove()}
+function addResult(data){const list=Array.isArray(data.kandidat)?data.kandidat:[];if(!list.length)return;const card=document.createElement('div');card.className='result-card';card.innerHTML='<div class="result-title">Kemungkinan berdasarkan gejala</div>'+list.slice(0,3).map((x,i)=>{const p=Math.max(0,Math.min(100,Number(x.probabilitas||0)*100));return `<div class="candidate"><div class="candidate-head"><span class="${i===0?'primary-name':''}">${escapeHtml(x.penyakit||'Tidak diketahui')}</span><span>${p.toFixed(1)}%</span></div><div class="track"><div class="fill" style="width:${p}%"></div></div></div>`}).join('');messages.appendChild(card);scrollBottom()}
+function addFollowup(symptom){const box=document.createElement('div');box.className='followup';box.id='followup';box.innerHTML=`<p>Apakah Anda juga mengalami <strong>${escapeHtml(label(symptom))}</strong>?</p><div class="answers"><button class="answer-btn yes" data-answer="yes">Ya</button><button class="answer-btn" data-answer="no">Tidak</button></div>`;messages.appendChild(box);box.querySelectorAll('button').forEach(b=>b.onclick=()=>answerFollowup(symptom,b.dataset.answer==='yes',box));scrollBottom()}
+async function answerFollowup(symptom,yes,box){if(box)box.remove();askedSymptoms.add(symptom);if(yes)confirmedSymptoms.add(symptom);addMessage(yes?'Ya, saya mengalaminya.':'Tidak, saya tidak mengalaminya.','user');await predict()}
+function extractSymptoms(text){const found=new Set();const lower=text.toLowerCase();for(const [phrase,keys] of Object.entries(ALIASES)){if(lower.includes(phrase))keys.forEach(k=>found.add(k))}for(const [key,name] of Object.entries(SYMPTOM_LABELS)){if(lower.includes(name))found.add(key)}return [...found]}
+async function sendMessage(text){text=text.trim();if(!text)return;welcome.classList.add('hidden');quick.classList.add('hidden');restart.classList.remove('hidden');addMessage(text,'user');const found=extractSymptoms(text);if(!found.length){addTyping();await delay(650);removeTyping();addMessage('Saya belum bisa mengenali gejala dari kalimat tersebut. Coba sebutkan keluhan yang lebih spesifik, misalnya “saya demam, sakit kepala, dan badan pegal”.');return}found.forEach(k=>{confirmedSymptoms.add(k);askedSymptoms.add(k)});addTyping();await delay(650);removeTyping();addMessage(`Baik. Saya menangkap ${found.length} gejala: ${found.map(label).join(', ')}.`);await predict()}
+async function predict(){send.disabled=true;try{const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symptoms:[...confirmedSymptoms],asked:[...askedSymptoms]})});if(!res.ok)throw new Error(`Server mengembalikan status ${res.status}`);const data=await res.json();addResult(data);if(data.gejala_tidak_dikenali?.length){addMessage(`Catatan: beberapa gejala belum dikenali model: ${data.gejala_tidak_dikenali.join(', ')}.`)}if(data.next_question){await delay(450);addFollowup(data.next_question)}else{await delay(400);addMessage('Analisis awal sudah selesai. Jika keluhan terasa berat, memburuk, atau mengkhawatirkan, sebaiknya periksakan diri ke tenaga kesehatan.')}}catch(err){showError('Tidak dapat terhubung ke server prediksi. Pastikan FastAPI sedang berjalan di http://127.0.0.1:8000.')}finally{send.disabled=false}}
+function showError(text){const old=document.querySelector('.error');if(old)old.remove();const el=document.createElement('div');el.className='error';el.textContent=text;messages.appendChild(el);scrollBottom()}
+function escapeHtml(s){const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML}
+function delay(ms){return new Promise(r=>setTimeout(r,ms))}function scrollBottom(){requestAnimationFrame(()=>{const chat=document.getElementById('chat');chat.scrollTop=chat.scrollHeight})}
+send.onclick=()=>{const v=textarea.value;textarea.value='';textarea.style.height='auto';sendMessage(v)};textarea.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.click()}});textarea.addEventListener('input',()=>{textarea.style.height='auto';textarea.style.height=Math.min(textarea.scrollHeight,110)+'px'});quick.querySelectorAll('button').forEach(b=>b.onclick=()=>sendMessage(b.textContent.replace(/^[^\w\u00C0-\uFFFF]+/,'').trim()));restart.onclick=()=>location.reload();
 </script>
 </body>
 </html>
