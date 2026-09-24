@@ -1,50 +1,185 @@
-# Disease Prediction
+# HealthPredict — Chatbot Prediksi Penyakit
 
-Prediksi penyakit dari checklist gejala, menggunakan Random Forest.
-Dataset: [Disease Prediction Using Machine Learning](https://www.kaggle.com/datasets/kaushil268/disease-prediction-using-machine-learning) (132 gejala biner -> 41 penyakit).
+HealthPredict adalah aplikasi web untuk membantu pengguna umum memahami keluhan kesehatan berdasarkan gejala yang mereka masukkan. Pengguna berinteraksi melalui antarmuka chatbot; backend menormalisasi gejala, menjalankan model machine learning, lalu menampilkan beberapa kemungkinan penyakit, confidence score, dan rekomendasi umum.
+
+> **Catatan penting:** HealthPredict adalah alat bantu informasi/screening berbasis model, bukan alat diagnosis. Hasil model tidak boleh digunakan sebagai pengganti pemeriksaan tenaga kesehatan.
+
+## Fitur
+- Chatbot gejala berbasis web responsif.
+- Input keluhan dalam bahasa natural sederhana.
+- Normalisasi alias gejala Bahasa Indonesia → fitur dataset.
+- Prediksi penyakit menggunakan Random Forest.
+- Top-5 kandidat penyakit + probabilitas.
+- Confidence score.
+- Rekomendasi tindak lanjut umum dan peringatan kondisi darurat.
+- Riwayat konsultasi per browser/session.
+- Penyimpanan data konsultasi dengan opsi enkripsi Fernet.
+- Login administrator.
+- Dashboard admin.
+- Evaluasi accuracy, precision, recall, F1 dan cross-validation.
+- Retrain model dari data/Training.csv.
+- Health check endpoint.
+- Docker image yang melatih model ketika image dibangun.
 
 ## Struktur
-
-```
-data/          Dataset mentah (Training.csv, Testing.csv)
-src/
-  preprocessing.py   Load & bersihkan data
-  train.py           Latih model, simpan ke models/
-  evaluate.py         Uji model ke data testing
-  pewdict.py         Fungsi prediksi dari daftar gejala
-models/        Artefak hasil training (.joblib)
+```text
 api/
-  main.py       FastAPI app, endpoint /predict
-  schemas.py    Skema request/response
-notebooks/      (belum diisi -- untuk eksplorasi & dokumentasi analisis)
+  auth.py
+  chat_schemas.py
+  db.py
+  disease_ml.py
+  main.py
+src/
+  preprocessing.py
+  symptom_normalizer.py
+  train.py
+  evaluate.py
+  evaluate_cv.py
+data/
+  Training.csv
+  Testing.csv
+frontend/
+  index.html
+models/
+  disease/          # dibuat saat training/build Docker
+DockerFile
+requirements.txt
 ```
 
-## Cara Pakai
+## Dataset
+Model menggunakan data/Training.csv dengan pola:
+- kolom fitur = gejala biner
+- kolom target = prognosis
 
-```bash
-pip install -r requirements.txt
-
-# Latih model (hasil disimpan ke models/)
-python src/train.py
-
-# Evaluasi ke data testing
+Jalankan training:
+```powershell
+python -m src.train
+```
+Evaluasi pada testing set:
+```powershell
 python src/evaluate.py
-
-# Jalankan API
-uvicorn api.main:app --reload
+```
+Cross-validation:
+```powershell
+python src/evaluate_cv.py
 ```
 
-Contoh request ke API:
+## Menjalankan lokal
+```powershell
+pip install -r requirements.txt
+python -m src.train
+python -m uvicorn api.main:app --reload
+```
+Buka: http://127.0.0.1:8000/
 
-```bash
-curl -X POST http://localhost:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{"symptoms": ["itching", "skin_rash", "high_fever"]}'
+Frontend sekarang dilayani langsung oleh FastAPI, sehingga tidak perlu lagi membuka frontend/index.html lewat Live Server.
+
+## Environment
+Contoh:
+```text
+ADMIN_NAME=Administrator
+ADMIN_EMAIL=admin@healthbot.local
+ADMIN_PASSWORD=ganti-password-kuat
+DATA_ENCRYPTION_KEY=<Fernet key>
+DATABASE_PATH=data/app.db
+CORS_ORIGINS=https://domain-frontend.example
+```
+Generate Fernet key:
+```powershell
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+Untuk deployment, gunakan secret manager/environment variables dan jangan commit file .env.
+
+Jika DATA_ENCRYPTION_KEY tidak diset, mode development menyimpan field konsultasi dengan prefix plain:. Untuk production, **wajib** mengatur DATA_ENCRYPTION_KEY.
+
+## Akun administrator development
+Default:
+```text
+Email    : admin@healthbot.local
+Password : admin123
+```
+Untuk deployment, ubah melalui ADMIN_EMAIL dan ADMIN_PASSWORD sebelum database pertama kali dibuat.
+
+## API
+GET /health
+POST /api/chat
+GET /api/history/{session_id}
+GET /api/symptoms
+POST /auth/login
+GET /admin/dashboard
+GET /admin/model-metrics
+GET /admin/consultations
+POST /admin/retrain
+
+## Docker
+Build:
+```powershell
+docker build -f DockerFile -t healthpredict .
+```
+Run:
+```powershell
+docker run --rm -p 8000:8000 -e ADMIN_EMAIL=admin@example.com -e ADMIN_PASSWORD="ganti-password-kuat" -e DATA_ENCRYPTION_KEY="PASTE_FERNET_KEY" healthpredict
+```
+Open http://localhost:8000
+
+Docker image menyalin dataset dan menjalankan training saat build, sehingga model tersedia sebelum container menerima request.
+
+## Production deployment
+
+The repository includes `render.yaml` for a production deployment on Render:
+- FastAPI + frontend run as one Docker web service.
+- Render PostgreSQL is used through `DATABASE_URL`.
+- Render provides managed TLS/HTTPS at the edge.
+- `/health` is configured as the deployment health check.
+- Production secrets are requested through Blueprint `sync: false` variables.
+
+Render automatically provisions and renews TLS certificates and redirects HTTP to HTTPS. The application itself therefore continues to serve plain HTTP inside the Render service.
+
+Before the first production deploy, provide:
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `DATA_ENCRYPTION_KEY`
+
+Do not commit these values.
+
+### Production runtime smoke test
+
+After the service is deployed, run:
+
+```powershell
+python scripts/smoke_test.py https://YOUR-SERVICE.onrender.com
 ```
 
-## Performa Model
+The script checks:
+1. `/health`
+2. `/api/symptoms`
+3. `POST /api/chat`
 
-Random Forest (200 trees) mencapai **97.62% akurasi** di data testing (41/42 benar).
-Catatan: dataset ini bersifat deterministik (tiap penyakit punya kombinasi gejala tetap),
-jadi akurasi tinggi ini wajar dan bukan indikasi model akan seakurat ini pada gejala
-pasien sungguhan yang lebih beragam/ambigu.
+For local runtime testing:
+
+```powershell
+python scripts/smoke_test.py http://127.0.0.1:8000
+```
+
+### Logging and monitoring
+
+The API writes request timing, status codes, request IDs, startup messages, health-check failures, and unhandled exceptions to stdout/stderr. It intentionally does not log chat message bodies, symptoms, or prediction payloads in request logs to reduce exposure of sensitive health information.
+
+Each request receives an `X-Request-ID` response header. If a user reports an error, that ID can be matched with the deployment logs.
+
+The `/health` endpoint returns HTTP 503 when the database or model is unavailable, allowing the hosting platform to detect an unhealthy instance.
+
+## Deployment checklist
+1. Gunakan HTTPS pada reverse proxy/platform deployment.
+2. Ganti akun administrator default melalui environment variables sebelum database dibuat.
+3. Set DATA_ENCRYPTION_KEY.
+4. Set CORS_ORIGINS hanya ke origin frontend yang diperlukan.
+5. Gunakan persistent storage untuk data/app.db jika memakai SQLite.
+6. Untuk skala besar, migrasikan database ke PostgreSQL.
+7. Jangan mengunggah model/data dari sumber yang tidak dipercaya.
+8. Uji model menggunakan dataset yang representatif sebelum penggunaan nyata.
+9. Monitor confidence rendah dan error model secara berkala.
+
+## Catatan SRS
+Implementasi ini mempertahankan bagian SRS yang masih relevan untuk konsep chatbot: preprocessing, klasifikasi, confidence score, rekomendasi, penyimpanan riwayat, evaluasi model, retraining, keamanan, dan antarmuka web responsif.
+Bagian SRS yang khusus untuk lingkungan rumah sakit seperti estimasi lama rawat inap dan billing tidak digunakan karena konsep produk yang diimplementasikan adalah chatbot prediksi penyakit berbasis gejala.
