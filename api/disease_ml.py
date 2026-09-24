@@ -10,7 +10,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder
 
-from src.symptom_normalizer import normalize_symptoms
+from src.symptom_normalizer import SYMPTOM_ALIASES, normalize_symptoms
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_DIR = BASE_DIR / "models" / "disease"
@@ -144,16 +144,7 @@ def extract_symptoms(message, selected=None):
     # aliases/model features over aggressive fuzzy matching.
     candidates = set(normalized_selected)
     lowered = str(message).lower()
-    aliases = {
-        "demam": "fever", "panas": "fever", "pusing": "headache",
-        "sakit kepala": "headache", "batuk": "cough", "mual": "nausea",
-        "muntah": "vomiting", "gatal": "itching", "ruam": "skin_rash",
-        "pegal": "muscle_pain", "nyeri otot": "muscle_pain",
-        "sakit pinggang": "back_pain", "nyeri pinggang": "back_pain",
-        "sakit punggung": "back_pain", "sesak napas": "breathlessness",
-        "sesak nafas": "breathlessness", "sulit bernapas": "breathlessness",
-        "berak darah": "bloody_stool", "bab berdarah": "bloody_stool",
-    }
+    aliases = SYMPTOM_ALIASES
     for phrase, feature in aliases.items():
         if phrase in lowered and feature in features:
             candidates.add(feature)
