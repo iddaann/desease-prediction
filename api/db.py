@@ -119,9 +119,12 @@ def generate_encryption_key():
     return Fernet.generate_key().decode()
 
 def seed_demo_users():
+    production = os.getenv("ENVIRONMENT", "development").lower() == "production"
     name = os.getenv("ADMIN_NAME", "Administrator")
-    email = os.getenv("ADMIN_EMAIL", "admin@healthbot.local").strip().lower()
-    password = os.getenv("ADMIN_PASSWORD", "admin123")
+    email = os.getenv("ADMIN_EMAIL", "").strip().lower() if production else os.getenv("ADMIN_EMAIL", "admin@healthbot.local").strip().lower()
+    password = os.getenv("ADMIN_PASSWORD", "") if production else os.getenv("ADMIN_PASSWORD", "admin123")
+    if production and (not email or not password or password == "admin123"):
+        raise RuntimeError("ADMIN_EMAIL dan ADMIN_PASSWORD production wajib diatur dan tidak boleh menggunakan default.")
     role = "admin"
     with connect() as db:
         db.execute(
