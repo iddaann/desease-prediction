@@ -10,7 +10,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder
 
-from src.symptom_normalizer import SYMPTOM_ALIASES, normalize_symptoms
+from src.symptom_normalizer import extract_symptoms_from_text, normalize_symptoms
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_DIR = BASE_DIR / "models" / "disease"
@@ -136,33 +136,29 @@ def feature_list():
     return joblib.load(FEATURES_FILE)
 
 def extract_symptoms(message, selected=None):
+    """Ekstrak gejala dari kalimat natural dan pilihan eksplisit pengguna."""
     features = feature_list()
     selected = selected or []
     normalized_selected, unknown = normalize_symptoms(selected, features)
+    extracted, _ = extract_symptoms_from_text(str(message), features)
 
-    # Scan the message phrase-by-phrase. This deliberately favors exact
-    # aliases/model features over aggressive fuzzy matching.
-    candidates = set(normalized_selected)
-    lowered = str(message).lower()
-    aliases = SYMPTOM_ALIASES
-    for phrase, feature in aliases.items():
-        if phrase in lowered and feature in features:
-            candidates.add(feature)
-
-    for feature in features:
-        label = feature.replace("_", " ").lower()
-        if label and label in lowered:
-            candidates.add(feature)
+    candidates = list(normalized_selected)
+    for feature in extracted:
+        if feature not in candidates:
+            candidates.append(feature)
 
     return sorted(candidates), unknown
+
 
 def predict_from_symptoms(symptoms):
     model, encoder, features = load_bundle()
     normalized, unknown = normalize_symptoms(symptoms, features)
+
     if not normalized:
         return {
             "needs_more_input": True,
-            "message": "Saya belum menemukan gejala yang dikenali. Coba sebutkan gejala secara spesifik, misalnya demam, batuk, pusing, mual, atau sesak napas.",
+            "status": "no_symptoms",
+            "message": "Saya belum menemukan gejala yang cukup jelas. Coba ceritakan keluhan secara spesifik, misalnya 'demam sejak kemarin, batuk kering, tenggorokan sakit, dan badan lemas'.",
             "recognized_symptoms": [],
             "unknown_symptoms": unknown,
             "candidates": [],
@@ -183,24 +179,46 @@ def predict_from_symptoms(symptoms):
         for i in order
     ]
     top = candidates[0]
+    confidence = top["probability"]
 
-    warnings = []
-    if top["probability"] < 0.45:
-        warnings.append("Confidence model relatif rendah. Hasil sebaiknya tidak dijadikan dasar diagnosis.")
-    warnings.append("Hasil ini adalah prediksi berbasis gejala, bukan diagnosis medis.")
+    # Random Forest probability pada dataset gejala yang sparse tidak selalu
+    # berarti kepastian klinis. Gunakan ambang konservatif agar chatbot tidak
+    # terdengar seperti memberikan diagnosis ketika bukti gejalanya lemah.
+    low_confidence = confidence < 0.45 or len(normalized) < 2
+
+    if low_confidence:
+        status = "needs_clarification"
+        message = (
+            "Saya sudah mengenali beberapa gejala, tetapi informasinya belum cukup "
+            "kuat untuk menyebut satu kemungkinan sebagai hasil utama. "
+            "Coba tambahkan gejala lain, misalnya sejak kapan keluhan muncul, "
+            "apakah ada demam, batuk, nyeri, mual, muntah, atau perubahan lain yang kamu rasakan."
+        )
+    else:
+        status = "prediction"
+        message = "Berdasarkan gejala yang dikenali, berikut kemungkinan teratas dari model."
+
+    warnings = ["Hasil ini adalah prediksi berbasis gejala, bukan diagnosis medis."]
+    if low_confidence:
+        warnings.insert(0, "Confidence model relatif rendah. Tambahkan gejala agar hasil lebih informatif.")
+    if any(s in normalized for s in ("breathlessness", "chest_pain")):
+        warnings.append("Jika sesak berat, nyeri dada berat, sulit berbicara karena sesak, atau kondisi memburuk, cari pertolongan medis segera.")
 
     return {
         "needs_more_input": False,
+        "status": status,
+        "message": message,
         "recognized_symptoms": normalized,
         "unknown_symptoms": unknown,
         "disease": top["disease"],
-        "confidence_score": top["probability"],
+        "confidence_score": confidence,
         "candidates": candidates,
         "recommendations": [
-            "Perhatikan perkembangan gejala dan kondisi tubuh.",
+            "Perhatikan perkembangan dan perubahan gejala.",
+            "Tambahkan gejala lain yang kamu alami agar pencocokan model lebih lengkap.",
             "Jika keluhan menetap, memburuk, atau mengganggu aktivitas, konsultasikan dengan tenaga kesehatan.",
-            "Jika muncul kondisi darurat seperti sesak berat, penurunan kesadaran, atau nyeri dada berat, cari pertolongan medis segera.",
         ],
         "warnings": warnings,
         "model_version": version(),
     }
+
