@@ -68,7 +68,7 @@ def generate_encryption_key():
 
 def seed_demo_users():
     demo_users = [
-        ("Administrator Demo", "admin@healthbot.local", "admin123", "admin"),
+        (os.getenv("ADMIN_NAME", "Administrator"), os.getenv("ADMIN_EMAIL", "admin@healthbot.local"), os.getenv("ADMIN_PASSWORD", "admin123"), "admin"),
     ]
     with connect() as db:
         for name, email, password, role in demo_users:
