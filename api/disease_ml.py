@@ -158,7 +158,8 @@ def predict_from_symptoms(symptoms):
         return {
             "needs_more_input": True,
             "status": "no_symptoms",
-            "message": "Saya belum menemukan gejala yang cukup jelas. Coba ceritakan keluhan secara spesifik, misalnya 'demam sejak kemarin, batuk kering, tenggorokan sakit, dan badan lemas'.",
+            "message": "Saya belum menemukan gejala yang cukup jelas. Coba ceritakan keluhanmu dengan kalimat biasa, misalnya: 'sejak kemarin demam, batuk kering, tenggorokan sakit, dan badan terasa lemas'.",
+            "response_text": "Saya belum menangkap gejala yang cukup jelas dari pesanmu. Coba ceritakan apa yang kamu rasakan dengan bahasa sehari-hari. Kamu juga boleh menambahkan sejak kapan keluhannya muncul.",
             "recognized_symptoms": [],
             "unknown_symptoms": unknown,
             "candidates": [],
@@ -181,22 +182,32 @@ def predict_from_symptoms(symptoms):
     top = candidates[0]
     confidence = top["probability"]
 
-    # Random Forest probability pada dataset gejala yang sparse tidak selalu
-    # berarti kepastian klinis. Gunakan ambang konservatif agar chatbot tidak
-    # terdengar seperti memberikan diagnosis ketika bukti gejalanya lemah.
     low_confidence = confidence < 0.45 or len(normalized) < 2
 
     if low_confidence:
         status = "needs_clarification"
         message = (
-            "Saya sudah mengenali beberapa gejala, tetapi informasinya belum cukup "
-            "kuat untuk menyebut satu kemungkinan sebagai hasil utama. "
-            "Coba tambahkan gejala lain, misalnya sejak kapan keluhan muncul, "
-            "apakah ada demam, batuk, nyeri, mual, muntah, atau perubahan lain yang kamu rasakan."
+            "Saya sudah mengenali beberapa gejala, tetapi informasinya belum cukup kuat "
+            "untuk menyebut satu kemungkinan sebagai hasil utama."
+        )
+        response_text = (
+            f"Saya sudah menangkap {len(normalized)} gejala dari ceritamu, tetapi model masih belum cukup yakin "
+            f"untuk mengarah pada satu kondisi tertentu. Kemungkinan teratas saat ini adalah {top['disease']} "
+            f"dengan confidence model {confidence * 100:.1f}%.\n\n"
+            "Kalau kamu mau, lanjutkan ceritanya. Misalnya jelaskan sejak kapan gejala muncul, seberapa berat, "
+            "dan apakah ada demam, batuk, nyeri, mual, muntah, ruam, atau keluhan lain. "
+            "Saya akan menggabungkan informasi dari pesan-pesan sebelumnya."
         )
     else:
         status = "prediction"
         message = "Berdasarkan gejala yang dikenali, berikut kemungkinan teratas dari model."
+        response_text = (
+            f"Dari gejala yang kamu ceritakan, kemungkinan teratas menurut model adalah {top['disease']} "
+            f"dengan confidence model {confidence * 100:.1f}%.\n\n"
+            "Hasil ini bukan diagnosis dan sebaiknya dipahami sebagai informasi awal. "
+            "Kalau kamu ingin, kamu bisa melanjutkan percakapan dengan menambahkan gejala lain atau "
+            "menjelaskan bagaimana kondisi ini berkembang. Saya akan mempertimbangkan gejala yang sudah kamu ceritakan sebelumnya."
+        )
 
     warnings = ["Hasil ini adalah prediksi berbasis gejala, bukan diagnosis medis."]
     if low_confidence:
@@ -208,6 +219,7 @@ def predict_from_symptoms(symptoms):
         "needs_more_input": False,
         "status": status,
         "message": message,
+        "response_text": response_text,
         "recognized_symptoms": normalized,
         "unknown_symptoms": unknown,
         "disease": top["disease"],
@@ -215,7 +227,7 @@ def predict_from_symptoms(symptoms):
         "candidates": candidates,
         "recommendations": [
             "Perhatikan perkembangan dan perubahan gejala.",
-            "Tambahkan gejala lain yang kamu alami agar pencocokan model lebih lengkap.",
+            "Kamu bisa menambahkan gejala lain pada pesan berikutnya agar pencocokan model lebih lengkap.",
             "Jika keluhan menetap, memburuk, atau mengganggu aktivitas, konsultasikan dengan tenaga kesehatan.",
         ],
         "warnings": warnings,
