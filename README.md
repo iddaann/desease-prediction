@@ -1,71 +1,140 @@
-# Disease Prediction & Health Recommendation
+# HealthPredict — Chatbot Prediksi Penyakit
 
-Implementasi SRS **Sistem Prediksi Penyakit dan Rekomendasi Kesehatan Berbasis Machine Learning**.
+HealthPredict adalah aplikasi web untuk membantu pengguna umum memahami keluhan kesehatan berdasarkan gejala yang mereka masukkan. Pengguna berinteraksi melalui antarmuka chatbot; backend menormalisasi gejala, menjalankan model machine learning, lalu menampilkan beberapa kemungkinan penyakit, confidence score, dan rekomendasi umum.
 
-## Fitur yang sudah diimplementasikan
+> **Catatan penting:** HealthPredict adalah alat bantu informasi/screening berbasis model, bukan alat diagnosis. Hasil model tidak boleh digunakan sebagai pengganti pemeriksaan tenaga kesehatan.
 
-- Login dan autentikasi berbasis token.
-- Role **Tenaga Medis** dan **Administrator**.
-- Form input data pasien dan validasi.
-- REST API JSON.
-- Penyimpanan riwayat input dan hasil prediksi di SQLite.
-- Model klasifikasi Random Forest.
-- Model regresi Random Forest untuk lama rawat inap.
-- Model regresi Random Forest untuk estimasi biaya.
-- Confidence score dan tiga kandidat klasifikasi.
-- Rekomendasi tindak lanjut berbasis hasil prediksi.
-- Riwayat prediksi pengguna.
-- Dashboard administrator.
-- Evaluasi akurasi, precision, recall, F1, RMSE, MAE, dan R2.
-- Retrain model dari dataset terbaru.
-- Versioning model dan pencatatan proses retrain.
-- Frontend web responsif tanpa instalasi tambahan.
-- Model symptom-disease lama tetap disimpan di `src/` sebagai modul terpisah.
+## Fitur
+- Chatbot gejala berbasis web responsif.
+- Input keluhan dalam bahasa natural sederhana.
+- Normalisasi alias gejala Bahasa Indonesia → fitur dataset.
+- Prediksi penyakit menggunakan Random Forest.
+- Top-5 kandidat penyakit + probabilitas.
+- Confidence score.
+- Rekomendasi tindak lanjut umum dan peringatan kondisi darurat.
+- Riwayat konsultasi per browser/session.
+- Penyimpanan data konsultasi dengan opsi enkripsi Fernet.
+- Login administrator.
+- Dashboard admin.
+- Evaluasi accuracy, precision, recall, F1 dan cross-validation.
+- Retrain model dari data/Training.csv.
+- Health check endpoint.
+- Docker image yang melatih model ketika image dibangun.
 
-## Catatan penting tentang dataset
-
-SRS meminta dataset dengan data administratif/klinis dan target **Medical Condition**, **Length of Stay**, serta **Billing Amount**. Repository awal justru menggunakan dataset gejala biner dengan target `prognosis`. Karena kedua dataset mempunyai struktur dan target yang berbeda, model lama tidak boleh dipakai untuk mengarang estimasi lama rawat atau biaya.
-
-Repository ini karena itu menyediakan pipeline SRS yang akan aktif setelah dataset rumah sakit tersedia. Gunakan `data/hospital_training.example.csv` sebagai contoh struktur. Dataset nyata yang dipakai untuk produksi harus divalidasi dan memiliki minimal kolom:
-
+## Struktur
+```text
+api/
+  auth.py
+  chat_schemas.py
+  db.py
+  disease_ml.py
+  main.py
+src/
+  preprocessing.py
+  symptom_normalizer.py
+  train.py
+  evaluate.py
+  evaluate_cv.py
+data/
+  Training.csv
+  Testing.csv
+frontend/
+  index.html
+models/
+  disease/          # dibuat saat training/build Docker
+DockerFile
+requirements.txt
 ```
-Age
-Gender
-Blood Type
-Admission Type
-Medication
-Test Results
-Medical Condition
-Length of Stay
-Billing Amount
+
+## Dataset
+Model menggunakan data/Training.csv dengan pola:
+- kolom fitur = gejala biner
+- kolom target = prognosis
+
+Jalankan training:
+```powershell
+python -m src.train
+```
+Evaluasi pada testing set:
+```powershell
+python src/evaluate.py
+```
+Cross-validation:
+```powershell
+python src/evaluate_cv.py
 ```
 
-## Menjalankan
-
-```bash
+## Menjalankan lokal
+```powershell
 pip install -r requirements.txt
+python -m src.train
 python -m uvicorn api.main:app --reload
 ```
+Buka: http://127.0.0.1:8000/
 
-Buka `frontend/index.html` melalui browser.
+Frontend sekarang dilayani langsung oleh FastAPI, sehingga tidak perlu lagi membuka frontend/index.html lewat Live Server.
 
-Akun demo:
-- Tenaga medis: `medis@healthbot.local` / `medis123`
-- Administrator: `admin@healthbot.local` / `admin123`
+## Environment
+Contoh:
+```text
+ADMIN_NAME=Administrator
+ADMIN_EMAIL=admin@healthbot.local
+ADMIN_PASSWORD=ganti-password-kuat
+DATA_ENCRYPTION_KEY=<Fernet key>
+DATABASE_PATH=data/app.db
+CORS_ORIGINS=https://domain-frontend.example
+```
+Generate Fernet key:
+```powershell
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+Untuk deployment, gunakan secret manager/environment variables dan jangan commit file .env.
 
-Untuk model SRS rumah sakit, tempatkan dataset pada `data/hospital_training.csv`, lalu login sebagai administrator dan jalankan **Retrain Model**.
+Jika DATA_ENCRYPTION_KEY tidak diset, mode development menyimpan field konsultasi dengan prefix plain:. Untuk production, **wajib** mengatur DATA_ENCRYPTION_KEY.
 
-## Endpoint utama
+## Akun administrator development
+Default:
+```text
+Email    : admin@healthbot.local
+Password : admin123
+```
+Untuk deployment, ubah melalui ADMIN_EMAIL dan ADMIN_PASSWORD sebelum database pertama kali dibuat.
 
-- `POST /auth/login`
-- `GET /auth/me`
-- `POST /predict`
-- `GET /predictions`
-- `GET /admin/dashboard`
-- `GET /admin/model-metrics`
-- `POST /admin/retrain`
+## API
+GET /health
+POST /api/chat
+GET /api/history/{session_id}
+GET /api/symptoms
+POST /auth/login
+GET /admin/dashboard
+GET /admin/model-metrics
+GET /admin/consultations
+POST /admin/retrain
 
-## Batasan penggunaan
+## Docker
+Build:
+```powershell
+docker build -f DockerFile -t healthpredict .
+```
+Run:
+```powershell
+docker run --rm -p 8000:8000 -e ADMIN_EMAIL=admin@example.com -e ADMIN_PASSWORD="ganti-password-kuat" -e DATA_ENCRYPTION_KEY="PASTE_FERNET_KEY" healthpredict
+```
+Open http://localhost:8000
 
-Sistem adalah alat bantu skrining dan perencanaan. Hasil model bukan diagnosis resmi. Akurasi sangat bergantung pada kualitas, representativitas, dan validasi dataset klinis. Implementasi produksi perlu HTTPS, database server seperti PostgreSQL/MySQL, secret management, audit log yang lebih lengkap, dan pengamanan jaringan.
+Docker image menyalin dataset dan menjalankan training saat build, sehingga model tersedia sebelum container menerima request.
 
+## Deployment checklist
+1. Gunakan HTTPS pada reverse proxy/platform deployment.
+2. Ganti akun administrator default melalui environment variables sebelum database dibuat.
+3. Set DATA_ENCRYPTION_KEY.
+4. Set CORS_ORIGINS hanya ke origin frontend yang diperlukan.
+5. Gunakan persistent storage untuk data/app.db jika memakai SQLite.
+6. Untuk skala besar, migrasikan database ke PostgreSQL.
+7. Jangan mengunggah model/data dari sumber yang tidak dipercaya.
+8. Uji model menggunakan dataset yang representatif sebelum penggunaan nyata.
+9. Monitor confidence rendah dan error model secara berkala.
+
+## Catatan SRS
+Implementasi ini mempertahankan bagian SRS yang masih relevan untuk konsep chatbot: preprocessing, klasifikasi, confidence score, rekomendasi, penyimpanan riwayat, evaluasi model, retraining, keamanan, dan antarmuka web responsif.
+Bagian SRS yang khusus untuk lingkungan rumah sakit seperti estimasi lama rawat inap dan billing tidak digunakan karena konsep produk yang diimplementasikan adalah chatbot prediksi penyakit berbasis gejala.
