@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
+data/app.db
+models/hospital/*.joblib
+models/hospital/*.json
+models/hospital/version.txt
