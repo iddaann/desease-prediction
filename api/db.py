@@ -1,9 +1,15 @@
+import base64
 import hashlib
 import hmac
 import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
+
+try:
+    from cryptography.fernet import Fernet
+except ImportError:
+    Fernet = None
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = Path(os.getenv("DATABASE_PATH", BASE_DIR / "data" / "app.db"))
@@ -31,22 +37,43 @@ def verify_password(password, encoded):
     except (ValueError, TypeError):
         return False
 
+def _fernet():
+    key = os.getenv("DATA_ENCRYPTION_KEY")
+    if not key or Fernet is None:
+        return None
+    return Fernet(key.encode())
+
+def encrypt_text(value):
+    value = str(value)
+    cipher = _fernet()
+    if cipher is None:
+        return "plain:" + value
+    return "fernet:" + cipher.encrypt(value.encode()).decode()
+
+def decrypt_text(value):
+    if value is None:
+        return ""
+    value = str(value)
+    if value.startswith("fernet:"):
+        cipher = _fernet()
+        if cipher is None:
+            raise RuntimeError("DATA_ENCRYPTION_KEY diperlukan untuk membaca data terenkripsi.")
+        return cipher.decrypt(value[7:].encode()).decode()
+    return value[6:] if value.startswith("plain:") else value
+
+def generate_encryption_key():
+    if Fernet is None:
+        raise RuntimeError("Paket cryptography belum terpasang.")
+    return Fernet.generate_key().decode()
+
 def seed_demo_users():
-    """
-    Create the demo accounts shown by the frontend when they do not exist yet.
-    Existing users are not overwritten.
-    """
     demo_users = [
-        ("Tenaga Medis Demo", "medis@healthbot.local", "medis123", "medical"),
         ("Administrator Demo", "admin@healthbot.local", "admin123", "admin"),
     ]
     with connect() as db:
         for name, email, password, role in demo_users:
             db.execute(
-                """
-                INSERT OR IGNORE INTO users(name, email, password_hash, role, created_at)
-                VALUES(?,?,?,?,?)
-                """,
+                "INSERT OR IGNORE INTO users(name,email,password_hash,role,created_at) VALUES(?,?,?,?,?)",
                 (name, email, hash_password(password), role, utcnow()),
             )
 
@@ -74,6 +101,16 @@ def init_db():
             model_version TEXT NOT NULL,
             created_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS consultations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            message TEXT NOT NULL,
+            symptoms TEXT NOT NULL,
+            result TEXT NOT NULL,
+            model_version TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_consultations_session ON consultations(session_id);
         CREATE TABLE IF NOT EXISTS model_runs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             model_version TEXT NOT NULL,
