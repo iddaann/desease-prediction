@@ -100,16 +100,29 @@ function addResult(d){
   const el=document.createElement('div'); el.className='msg bot';
   const wrap=document.createElement('div'); wrap.className='bubble'; wrap.style.background='transparent'; wrap.style.padding='0';
   const r=document.createElement('div'); r.className='result';
+
   if(d.needs_more_input){
     r.innerHTML='<h3>Belum cukup informasi</h3><p>'+esc(d.message)+'</p>';
   }else{
     const candidates=(d.candidates||[]).map(x=>'<div class="candidate"><div class="candidate-head"><b>'+esc(x.disease)+'</b><span>'+((x.probability||0)*100).toFixed(1)+'%</span></div><div class="bar"><i style="width:'+Math.min(100,(x.probability||0)*100)+'%"></i></div></div>').join('');
     const tags=(d.recognized_symptoms||[]).map(x=>'<span class="tag">'+esc(x.replaceAll('_',' '))+'</span>').join('');
     const notes=(d.warnings||[]).map(x=>'<div class="notice">'+esc(x)+'</div>').join('');
-    r.innerHTML='<h3>Hasil analisis</h3><div class="disease">'+esc(d.disease)+'</div><div class="confidence">Confidence model: '+((d.confidence_score||0)*100).toFixed(1)+'%</div><p><b>Gejala yang dikenali:</b><br>'+tags+'</p><h4>Kemungkinan lainnya</h4>'+candidates+'<h4>Rekomendasi umum</h4><ul>'+((d.recommendations||[]).map(x=>'<li>'+esc(x)+'</li>').join(''))+'</ul>'+notes+'<div class="safe">Jika kamu mengalami gejala berat atau keadaan darurat, jangan menunggu hasil aplikasi. Cari bantuan medis segera.</div><p class="muted" style="font-size:11px">Model: '+esc(d.model_version)+'</p>';
+    const unknown=(d.unknown_symptoms||[]).map(x=>'<span class="tag" style="background:#fff7ed;color:#9a3412">'+esc(x)+'</span>').join('');
+    const title=d.status==='needs_clarification'?'Kemungkinan teratas — informasi masih terbatas':'Hasil analisis';
+    const message=d.message?'<p>'+esc(d.message)+'</p>':'';
+    r.innerHTML='<h3>'+title+'</h3>'+message+
+      '<div class="disease">'+esc(d.disease)+'</div>'+
+      '<div class="confidence">Confidence model: '+((d.confidence_score||0)*100).toFixed(1)+'%</div>'+
+      '<p><b>Gejala yang dikenali:</b><br>'+tags+'</p>'+
+      (unknown?'<p><b>Belum dikenali:</b><br>'+unknown+'</p>':'')+
+      '<h4>Kemungkinan lainnya</h4>'+candidates+
+      '<h4>Rekomendasi umum</h4><ul>'+((d.recommendations||[]).map(x=>'<li>'+esc(x)+'</li>').join(''))+'</ul>'+
+      notes+'<div class="safe">Jika kamu mengalami gejala berat atau keadaan darurat, jangan menunggu hasil aplikasi. Cari bantuan medis segera.</div>'+
+      '<p class="muted" style="font-size:11px">Model: '+esc(d.model_version)+'</p>';
   }
   wrap.appendChild(r);el.appendChild(wrap);$('chat').appendChild(el);window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
 }
+
 async function sendMessage(e){
   e.preventDefault();
   const input=$('message'); const message=input.value.trim(); if(!message)return;
