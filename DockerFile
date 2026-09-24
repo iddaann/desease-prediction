@@ -3,7 +3,8 @@ FROM python:3.12-slim
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    ENVIRONMENT=production
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -13,9 +14,10 @@ COPY src/ ./src
 COPY data/ ./data
 COPY frontend/ ./frontend
 
-# Build a model artifact into the image so the container is ready to serve.
+# Build the model artifact into the image.
 RUN python -m src.train
 
 EXPOSE 8000
 
+# Local Docker default. Render overrides this with $PORT.
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
