@@ -124,6 +124,51 @@ Open http://localhost:8000
 
 Docker image menyalin dataset dan menjalankan training saat build, sehingga model tersedia sebelum container menerima request.
 
+## Production deployment
+
+The repository includes `render.yaml` for a production deployment on Render:
+- FastAPI + frontend run as one Docker web service.
+- Render PostgreSQL is used through `DATABASE_URL`.
+- Render provides managed TLS/HTTPS at the edge.
+- `/health` is configured as the deployment health check.
+- Production secrets are requested through Blueprint `sync: false` variables.
+
+Render automatically provisions and renews TLS certificates and redirects HTTP to HTTPS. The application itself therefore continues to serve plain HTTP inside the Render service.
+
+Before the first production deploy, provide:
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `DATA_ENCRYPTION_KEY`
+
+Do not commit these values.
+
+### Production runtime smoke test
+
+After the service is deployed, run:
+
+```powershell
+python scripts/smoke_test.py https://YOUR-SERVICE.onrender.com
+```
+
+The script checks:
+1. `/health`
+2. `/api/symptoms`
+3. `POST /api/chat`
+
+For local runtime testing:
+
+```powershell
+python scripts/smoke_test.py http://127.0.0.1:8000
+```
+
+### Logging and monitoring
+
+The API writes request timing, status codes, request IDs, startup messages, health-check failures, and unhandled exceptions to stdout/stderr. It intentionally does not log chat message bodies, symptoms, or prediction payloads in request logs to reduce exposure of sensitive health information.
+
+Each request receives an `X-Request-ID` response header. If a user reports an error, that ID can be matched with the deployment logs.
+
+The `/health` endpoint returns HTTP 503 when the database or model is unavailable, allowing the hosting platform to detect an unhealthy instance.
+
 ## Deployment checklist
 1. Gunakan HTTPS pada reverse proxy/platform deployment.
 2. Ganti akun administrator default melalui environment variables sebelum database dibuat.
