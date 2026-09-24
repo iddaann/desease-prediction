@@ -50,12 +50,42 @@ def symptoms():
 @app.post("/api/chat")
 def chat(payload: ChatRequest):
     session_id = payload.session_id or secrets.token_urlsafe(18)
-    extracted, unknown = extract_symptoms(payload.message, payload.symptoms)
-    result = predict_from_symptoms(extracted)
 
-    if result.get("needs_more_input"):
-        result["recognized_symptoms"] = extracted
+    # Ambil gejala dari percakapan sebelumnya agar follow-up seperti
+    # "batuknya juga ada" atau "terus bagaimana?" tetap punya konteks.
+    previous_symptoms = []
+    previous_result = None
+    with connect() as db:
+        rows = db.execute(
+            "SELECT symptoms,result FROM consultations WHERE session_id=? ORDER BY id DESC LIMIT 12",
+            (session_id,),
+        ).fetchall()
+    for row in rows:
+        try:
+            previous_symptoms.extend(json.loads(decrypt_text(row["symptoms"])))
+            if previous_result is None:
+                previous_result = json.loads(decrypt_text(row["result"]))
+        except (json.JSONDecodeError, TypeError):
+            continue
+
+    extracted, unknown = extract_symptoms(payload.message, payload.symptoms)
+    merged = list(dict.fromkeys(previous_symptoms + extracted))
+
+    # Jika user hanya melanjutkan percakapan tanpa menambahkan gejala,
+    # berikan jawaban berbasis hasil terakhir alih-alih memulai prediksi dari nol.
+    if not extracted and previous_result and previous_result.get("response_text"):
+        result = dict(previous_result)
+        result["response_text"] = (
+            "Tentu, kita bisa lanjut dari pembahasan sebelumnya.\n\n"
+            + previous_result["response_text"]
+        )
+        result["recognized_symptoms"] = merged
+        result["session_id"] = session_id
+    else:
+        result = predict_from_symptoms(merged)
+        result["recognized_symptoms"] = merged
         result["unknown_symptoms"] = unknown
+        result["session_id"] = session_id
 
     with connect() as db:
         db.execute(
@@ -66,14 +96,13 @@ def chat(payload: ChatRequest):
             (
                 session_id,
                 encrypt_text(payload.message),
-                encrypt_text(json.dumps(extracted, ensure_ascii=False)),
+                encrypt_text(json.dumps(merged, ensure_ascii=False)),
                 encrypt_text(json.dumps(result, ensure_ascii=False)),
                 result.get("model_version", version()),
                 utcnow(),
             ),
         )
 
-    result["session_id"] = session_id
     return result
 
 @app.get("/api/history/{session_id}")
