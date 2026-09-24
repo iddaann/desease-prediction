@@ -31,6 +31,25 @@ def verify_password(password, encoded):
     except (ValueError, TypeError):
         return False
 
+def seed_demo_users():
+    """
+    Create the demo accounts shown by the frontend when they do not exist yet.
+    Existing users are not overwritten.
+    """
+    demo_users = [
+        ("Tenaga Medis Demo", "medis@healthbot.local", "medis123", "medical"),
+        ("Administrator Demo", "admin@healthbot.local", "admin123", "admin"),
+    ]
+    with connect() as db:
+        for name, email, password, role in demo_users:
+            db.execute(
+                """
+                INSERT OR IGNORE INTO users(name, email, password_hash, role, created_at)
+                VALUES(?,?,?,?,?)
+                """,
+                (name, email, hash_password(password), role, utcnow()),
+            )
+
 def init_db():
     with connect() as db:
         db.executescript("""
@@ -64,3 +83,4 @@ def init_db():
             created_at TEXT NOT NULL
         );
         """)
+    seed_demo_users()
