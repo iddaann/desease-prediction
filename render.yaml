@@ -32,4 +32,4 @@ services:
 databases:
   - name: healthpredict-db
     databaseName: healthpredict
-    plan: basic-1gb
+    plan: free
