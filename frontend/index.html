@@ -3,18 +3,36 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HealthPredict — Chatbot Kesehatan</title>
+<title>HealthPredict — Asisten Gejala</title>
 <style>
-:root{--bg:#f6f8fc;--panel:#fff;--text:#172033;--muted:#667085;--primary:#2563eb;--primary2:#1d4ed8;--soft:#eff6ff;--border:#e4e7ec;--danger:#b42318;--success:#067647}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-button,input{font:inherit}.hidden{display:none!important}.app{min-height:100vh;display:flex;flex-direction:column}
-.top{height:68px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:5}.brand{font-size:20px;font-weight:800}.brand span{color:var(--primary)}.top-actions{display:flex;gap:8px;align-items:center}
-.btn{border:1px solid var(--border);background:#fff;border-radius:10px;padding:9px 13px;cursor:pointer}.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}.btn.primary:hover{background:var(--primary2)}.btn.ghost{background:transparent}
-.main{width:min(980px,100%);margin:0 auto;padding:30px 18px 110px;flex:1}.hero{text-align:center;padding:34px 10px 24px}.hero h1{font-size:34px;margin:0 0 10px}.hero h1 span{color:var(--primary)}.hero p{margin:0;color:var(--muted);line-height:1.6}
-.chat{display:flex;flex-direction:column;gap:14px}.msg{display:flex}.msg.user{justify-content:flex-end}.bubble{max-width:min(760px,90%);padding:14px 16px;border-radius:16px;line-height:1.55;white-space:pre-wrap}.bot .bubble{background:#fff;border:1px solid var(--border);border-top-left-radius:5px}.user .bubble{background:var(--primary);color:#fff;border-top-right-radius:5px}
-.result{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px;margin-top:4px}.result h3{margin:0 0 10px}.disease{font-size:25px;font-weight:800;margin-bottom:8px}.confidence{color:var(--primary);font-weight:700}.candidate{margin-top:12px}.candidate-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}.bar{height:7px;background:#edf1f5;border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--primary)}.tag{display:inline-block;background:var(--soft);color:#1d4ed8;border-radius:999px;padding:5px 9px;font-size:12px;margin:3px}.notice{padding:11px 12px;border-radius:10px;background:#fffaeb;color:#93370d;font-size:13px;margin-top:12px}.safe{padding:11px 12px;border-radius:10px;background:#ecfdf3;color:#05603a;font-size:13px;margin-top:12px}.composer-wrap{position:fixed;bottom:0;left:0;right:0;background:rgba(246,248,252,.95);backdrop-filter:blur(10px);border-top:1px solid var(--border);padding:12px 18px}.composer{width:min(980px,100%);margin:auto;display:flex;gap:10px;align-items:flex-end;background:#fff;border:1px solid var(--border);border-radius:15px;padding:9px}.composer textarea{flex:1;border:0;resize:none;outline:none;min-height:44px;max-height:130px;padding:10px;background:transparent}.send{width:44px;height:44px;border-radius:12px}.suggestions{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:17px}.suggestions button{border:1px solid #bfdbfe;background:#fff;color:#1d4ed8;border-radius:999px;padding:8px 11px;cursor:pointer;font-size:13px}
-.panel{background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:18px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.metric{border:1px solid var(--border);border-radius:12px;padding:15px}.metric small{display:block;color:var(--muted);margin-bottom:6px}.metric strong{font-size:22px}.table{width:100%;border-collapse:collapse;font-size:13px}.table th,.table td{text-align:left;padding:10px;border-bottom:1px solid var(--border)}.admin-login{width:min(420px,100%);margin:70px auto}.field{margin:13px 0}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}.field input{width:100%;border:1px solid #d0d5dd;border-radius:9px;padding:11px}.error{color:var(--danger);font-size:13px;margin-top:8px}.muted{color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;background:#f8fafc;padding:12px;border-radius:10px;font-size:12px}
-@media(max-width:700px){.hero h1{font-size:28px}.grid{grid-template-columns:1fr}.top{padding:0 14px}.main{padding-top:12px}.bubble{max-width:94%}.top-actions .btn:first-child{display:none}}
+:root{
+  --bg:#f5f7fb;--surface:rgba(255,255,255,.72);--surface-strong:rgba(255,255,255,.9);
+  --text:#18202d;--muted:#697386;--line:rgba(24,32,45,.09);
+  --blue:#5b7cfa;--blue-soft:#edf1ff;--purple:#9b8afb;--danger:#a34b55;
+  --shadow:0 18px 55px rgba(42,54,85,.09);--radius:24px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter",system-ui,sans-serif;background:
+radial-gradient(circle at 12% 8%,rgba(145,166,255,.18),transparent 27rem),
+radial-gradient(circle at 88% 12%,rgba(206,190,255,.18),transparent 28rem),
+linear-gradient(180deg,#f8f9fc 0%,#f2f5fa 100%);min-height:100vh}
+button,input,textarea{font:inherit}.hidden{display:none!important}
+.app{min-height:100vh}.top{position:sticky;top:0;z-index:20;height:72px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;background:rgba(248,249,252,.68);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border-bottom:1px solid var(--line)}
+.brand{font-size:19px;letter-spacing:-.03em;font-weight:750}.brand span{color:var(--blue)}
+.top-actions{display:flex;gap:8px}.btn{border:1px solid var(--line);background:rgba(255,255,255,.62);color:var(--text);border-radius:14px;padding:10px 14px;cursor:pointer;box-shadow:0 4px 15px rgba(30,40,70,.04);transition:.2s}.btn:hover{transform:translateY(-1px);background:#fff}.btn.primary{border-color:transparent;background:linear-gradient(135deg,#6685ff,#7d73ed);color:#fff;font-weight:650}.btn.ghost{background:transparent;box-shadow:none}
+.main{width:min(860px,100%);margin:auto;padding:46px 20px 150px}.hero{text-align:center;padding:35px 10px 38px}.eyebrow{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:999px;background:rgba(255,255,255,.62);border:1px solid var(--line);color:#6876a7;font-size:12px;font-weight:650;box-shadow:0 8px 25px rgba(45,60,100,.05)}.dot{width:7px;height:7px;border-radius:50%;background:#7c8cff;box-shadow:0 0 0 5px rgba(124,140,255,.12)}
+.hero h1{font-size:clamp(35px,6vw,58px);line-height:1.03;letter-spacing:-.055em;margin:19px 0 15px;font-weight:760}.hero h1 span{background:linear-gradient(135deg,#5577f7,#9a83ee);-webkit-background-clip:text;background-clip:text;color:transparent}.hero p{max-width:620px;margin:auto;color:var(--muted);font-size:15px;line-height:1.75}
+.suggestions{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:24px}.suggestions button{border:1px solid var(--line);background:rgba(255,255,255,.55);color:#59657a;border-radius:999px;padding:9px 13px;cursor:pointer;transition:.2s}.suggestions button:hover{background:#fff;color:#506de0;transform:translateY(-1px)}
+.chat{display:flex;flex-direction:column;gap:20px}.msg{display:flex;animation:rise .28s ease}.msg.user{justify-content:flex-end}.bubble{max-width:min(690px,91%);padding:15px 18px;border-radius:22px;line-height:1.72;font-size:15px;white-space:pre-wrap}.user .bubble{background:linear-gradient(135deg,#6584fa,#7c73ed);color:#fff;border-bottom-right-radius:7px;box-shadow:0 12px 28px rgba(91,124,250,.18)}.bot .bubble{background:var(--surface);border:1px solid rgba(255,255,255,.82);box-shadow:var(--shadow);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom-left-radius:7px}
+.assistant-name{font-size:11px;font-weight:700;letter-spacing:.03em;color:#7280a4;margin-bottom:6px}.response{white-space:pre-wrap}.response p{margin:0 0 12px}.response p:last-child{margin-bottom:0}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}.pill{display:inline-flex;padding:6px 9px;border-radius:999px;background:rgba(239,243,255,.8);color:#596cae;font-size:11px}.pill.warning{background:#fff3f1;color:#9b5b61}
+.details{margin-top:13px;border-top:1px solid var(--line);padding-top:11px}.details summary{cursor:pointer;color:#6b7690;font-size:12px;font-weight:650}.detail-content{padding-top:10px;font-size:13px;color:#667085}.detail-content ul{margin:7px 0 0;padding-left:20px}.candidate-line{display:flex;justify-content:space-between;gap:20px;padding:5px 0}.candidate-line span:last-child{color:#6175d6;font-weight:650}.typing{display:flex;gap:4px;padding:3px 0}.typing i{width:6px;height:6px;border-radius:50%;background:#9ba5b9;animation:blink 1s infinite}.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+.composer-wrap{position:fixed;z-index:15;bottom:0;left:0;right:0;padding:14px 18px 20px;background:linear-gradient(180deg,rgba(245,247,251,0),rgba(245,247,251,.88) 35%,rgba(245,247,251,.97));pointer-events:none}.composer{pointer-events:auto;width:min(820px,100%);margin:auto;display:flex;align-items:flex-end;gap:8px;padding:7px 8px 7px 16px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.9);border-radius:22px;box-shadow:0 16px 45px rgba(37,49,80,.13),inset 0 0 0 1px rgba(30,40,70,.04);backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px)}.composer textarea{flex:1;border:0;outline:0;resize:none;background:transparent;color:var(--text);padding:9px 2px;min-height:44px;max-height:130px;line-height:1.5}.composer textarea::placeholder{color:#9aa3b3}.send{width:44px;height:44px;padding:0;border-radius:15px;font-size:20px;display:grid;place-items:center}
+.panel{background:var(--surface);border:1px solid rgba(255,255,255,.85);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);margin-bottom:18px}.admin-login{width:min(430px,100%);margin:60px auto}.field{margin:14px 0}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:7px}.field input{width:100%;border:1px solid var(--line);background:rgba(255,255,255,.7);border-radius:13px;padding:12px;outline:none}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.metric{padding:15px;border-radius:17px;background:rgba(255,255,255,.48);border:1px solid var(--line)}.metric small{display:block;color:var(--muted);margin-bottom:7px}.metric strong{font-size:22px}.table{width:100%;border-collapse:collapse;font-size:13px}.table th,.table td{text-align:left;padding:10px;border-bottom:1px solid var(--line)}.muted{color:var(--muted)}pre{white-space:pre-wrap;overflow:auto;background:rgba(245,247,251,.7);padding:13px;border-radius:14px;font-size:12px}.error{color:var(--danger);font-size:13px;margin-top:8px}.safe{margin-top:12px;padding:11px 13px;border-radius:13px;background:rgba(232,247,239,.8);color:#376c50;font-size:12px}.notice{margin-top:12px;padding:11px 13px;border-radius:13px;background:rgba(255,239,239,.8);color:#92565d;font-size:12px}
+@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@media(max-width:760px){.top{height:64px;padding:0 15px}.top-actions .btn:first-child{display:none}.main{padding:22px 14px 135px}.hero{padding:25px 4px 30px}.hero h1{font-size:37px}.bubble{max-width:95%}.grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.hero h1{font-size:32px}.suggestions{justify-content:flex-start}.suggestions button{font-size:12px}.grid{grid-template-columns:1fr}.composer-wrap{padding:10px 10px 13px}.composer{border-radius:19px}}
 </style>
 </head>
 <body>
@@ -29,13 +47,14 @@ button,input{font:inherit}.hidden{display:none!important}.app{min-height:100vh;d
 
 <main id="chatPage" class="main">
   <section class="hero">
-    <h1>Ceritakan <span>gejala</span> yang kamu rasakan</h1>
-    <p>HealthPredict menganalisis gejala yang kamu masukkan dan menampilkan beberapa kemungkinan kondisi.<br>Gunakan hasil sebagai informasi awal, bukan sebagai diagnosis.</p>
+    <div class="eyebrow"><i class="dot"></i> Asisten kesehatan berbasis gejala</div>
+    <h1>Ceritakan apa yang<br><span>kamu rasakan.</span></h1>
+    <p>Gunakan bahasa sehari-hari. Saya akan membantu memahami gejala yang kamu ceritakan dan mencocokkannya dengan model prediksi penyakit.</p>
     <div class="suggestions">
-      <button onclick="useSuggestion('Saya demam, pusing, batuk, dan merasa lemas')">Demam + batuk + pusing</button>
-      <button onclick="useSuggestion('Saya mual, muntah, dan sakit perut')">Mual + muntah</button>
-      <button onclick="useSuggestion('Saya gatal dan muncul ruam kulit')">Gatal + ruam</button>
-      <button onclick="useSuggestion('Saya sesak napas dan merasa lemas')">Sesak napas</button>
+      <button onclick="useSuggestion('Sejak kemarin saya demam, pusing, batuk dan badan terasa lemas')">Demam & batuk</button>
+      <button onclick="useSuggestion('Saya mual, muntah dan perut terasa sakit')">Mual & muntah</button>
+      <button onclick="useSuggestion('Kulit saya gatal dan muncul ruam merah')">Gatal & ruam</button>
+      <button onclick="useSuggestion('Saya merasa sesak napas dan dada terasa berat')">Sesak napas</button>
     </div>
   </section>
   <section id="chat" class="chat"></section>
@@ -43,43 +62,24 @@ button,input{font:inherit}.hidden{display:none!important}.app{min-height:100vh;d
 
 <div id="composerWrap" class="composer-wrap">
   <form class="composer" onsubmit="sendMessage(event)">
-    <textarea id="message" placeholder="Contoh: saya demam, pusing dan batuk..." rows="1"></textarea>
-    <button class="btn primary send" type="submit">➤</button>
+    <textarea id="message" placeholder="Ceritakan keluhanmu..." rows="1"></textarea>
+    <button class="btn primary send" type="submit" aria-label="Kirim">↑</button>
   </form>
 </div>
 
 <section id="adminPage" class="main hidden">
   <div id="adminLogin" class="panel admin-login">
-    <h2>Administrator</h2>
-    <p class="muted">Login untuk melihat evaluasi model dan melakukan retraining.</p>
+    <h2 style="margin-top:0">Administrator</h2><p class="muted">Kelola evaluasi dan model HealthPredict.</p>
     <div class="field"><label>Email</label><input id="adminEmail" placeholder="Email administrator"></div>
     <div class="field"><label>Password</label><input id="adminPassword" type="password" placeholder="Password administrator"></div>
-    <button class="btn primary" onclick="adminLogin()">Masuk</button>
-    <div id="adminError" class="error"></div>
+    <button class="btn primary" onclick="adminLogin()">Masuk</button><div id="adminError" class="error"></div>
   </div>
   <div id="adminDashboard" class="hidden">
-    <div class="panel">
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
-        <div><h2 style="margin:0">Dashboard Administrator</h2><p class="muted">Monitoring model HealthPredict.</p></div>
-        <button class="btn" onclick="closeAdmin()">Kembali ke chatbot</button>
-      </div>
-    </div>
+    <div class="panel" style="display:flex;justify-content:space-between;gap:15px;align-items:center"><div><h2 style="margin:0">Dashboard</h2><p class="muted">Monitoring model dan konsultasi.</p></div><button class="btn" onclick="closeAdmin()">Kembali</button></div>
     <div id="stats" class="grid"></div>
-    <div class="panel">
-      <h3>Evaluasi Model</h3>
-      <pre id="metrics">Memuat...</pre>
-    </div>
-    <div class="panel">
-      <h3>Retrain Model</h3>
-      <p class="muted">Dataset default menggunakan <code>data/Training.csv</code> dengan target <code>prognosis</code>.</p>
-      <div class="field"><input id="datasetPath" value="data/Training.csv"></div>
-      <button class="btn primary" onclick="retrain()">Jalankan Retrain</button>
-      <div id="retrainResult"></div>
-    </div>
-    <div class="panel">
-      <h3>Riwayat Konsultasi Terbaru</h3>
-      <div style="overflow:auto"><table class="table"><thead><tr><th>Waktu</th><th>Pesan</th><th>Prediksi</th></tr></thead><tbody id="adminRows"></tbody></table></div>
-    </div>
+    <div class="panel"><h3>Evaluasi Model</h3><pre id="metrics">Memuat...</pre></div>
+    <div class="panel"><h3>Retrain Model</h3><p class="muted">Dataset default: <code>data/Training.csv</code></p><div class="field"><input id="datasetPath" value="data/Training.csv"></div><button class="btn primary" onclick="retrain()">Jalankan Retrain</button><div id="retrainResult"></div></div>
+    <div class="panel"><h3>Riwayat Konsultasi</h3><div style="overflow:auto"><table class="table"><thead><tr><th>Waktu</th><th>Pesan</th><th>Prediksi</th></tr></thead><tbody id="adminRows"></tbody></table></div></div>
   </div>
 </section>
 </div>
@@ -91,79 +91,69 @@ let adminToken=localStorage.getItem('health_admin_token')||'';
 localStorage.setItem('health_session',sessionId);
 const $=id=>document.getElementById(id);
 
+function esc(s){const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML}
 function addMessage(role,text){
-  const el=document.createElement('div'); el.className='msg '+role;
-  const b=document.createElement('div'); b.className='bubble'; b.textContent=text;
-  el.appendChild(b); $('chat').appendChild(el); window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+  const el=document.createElement('div');el.className='msg '+role;
+  const b=document.createElement('div');b.className='bubble';
+  if(role==='bot')b.innerHTML='<div class="assistant-name">HEALTHPREDICT</div><div class="response">'+esc(text)+'</div>';else b.textContent=text;
+  el.appendChild(b);$('chat').appendChild(el);scrollBottom();
 }
+function scrollBottom(){requestAnimationFrame(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}))}
+function addTyping(){
+  const el=document.createElement('div');el.id='typing';el.className='msg bot';el.innerHTML='<div class="bubble"><div class="assistant-name">HEALTHPREDICT</div><div class="typing"><i></i><i></i><i></i></div></div>';$('chat').appendChild(el);scrollBottom();
+}
+function removeTyping(){const t=$('typing');if(t)t.remove()}
 function addResult(d){
-  const el=document.createElement('div'); el.className='msg bot';
-  const wrap=document.createElement('div'); wrap.className='bubble'; wrap.style.background='transparent'; wrap.style.padding='0';
-  const r=document.createElement('div'); r.className='result';
-
-  if(d.needs_more_input){
-    r.innerHTML='<h3>Belum cukup informasi</h3><p>'+esc(d.message)+'</p>';
-  }else{
-    const candidates=(d.candidates||[]).map(x=>'<div class="candidate"><div class="candidate-head"><b>'+esc(x.disease)+'</b><span>'+((x.probability||0)*100).toFixed(1)+'%</span></div><div class="bar"><i style="width:'+Math.min(100,(x.probability||0)*100)+'%"></i></div></div>').join('');
-    const tags=(d.recognized_symptoms||[]).map(x=>'<span class="tag">'+esc(x.replaceAll('_',' '))+'</span>').join('');
-    const notes=(d.warnings||[]).map(x=>'<div class="notice">'+esc(x)+'</div>').join('');
-    const unknown=(d.unknown_symptoms||[]).map(x=>'<span class="tag" style="background:#fff7ed;color:#9a3412">'+esc(x)+'</span>').join('');
-    const title=d.status==='needs_clarification'?'Kemungkinan teratas — informasi masih terbatas':'Hasil analisis';
-    const message=d.message?'<p>'+esc(d.message)+'</p>':'';
-    r.innerHTML='<h3>'+title+'</h3>'+message+
-      '<div class="disease">'+esc(d.disease)+'</div>'+
-      '<div class="confidence">Confidence model: '+((d.confidence_score||0)*100).toFixed(1)+'%</div>'+
-      '<p><b>Gejala yang dikenali:</b><br>'+tags+'</p>'+
-      (unknown?'<p><b>Belum dikenali:</b><br>'+unknown+'</p>':'')+
-      '<h4>Kemungkinan lainnya</h4>'+candidates+
-      '<h4>Rekomendasi umum</h4><ul>'+((d.recommendations||[]).map(x=>'<li>'+esc(x)+'</li>').join(''))+'</ul>'+
-      notes+'<div class="safe">Jika kamu mengalami gejala berat atau keadaan darurat, jangan menunggu hasil aplikasi. Cari bantuan medis segera.</div>'+
-      '<p class="muted" style="font-size:11px">Model: '+esc(d.model_version)+'</p>';
+  const el=document.createElement('div');el.className='msg bot';
+  const b=document.createElement('div');b.className='bubble';
+  const text=d.response_text||d.message||'Saya sudah memproses keluhanmu.';
+  const paragraphs=esc(text).split('\n\n').map(x=>'<p>'+x.replace(/\n/g,'<br>')+'</p>').join('');
+  const pills=[];
+  if(d.confidence_score!=null)pills.push('<span class="pill">Confidence '+((d.confidence_score||0)*100).toFixed(1)+'%</span>');
+  (d.recognized_symptoms||[]).slice(0,6).forEach(x=>pills.push('<span class="pill">'+esc(x.replaceAll('_',' '))+'</span>'));
+  let detail='';
+  if((d.candidates||[]).length){
+    detail='<details class="details"><summary>Lihat detail hasil model</summary><div class="detail-content">'+
+      '<div class="candidate-line"><b>Kemungkinan teratas</b><span>'+esc(d.disease||'-')+'</span></div>'+
+      (d.candidates||[]).map(x=>'<div class="candidate-line"><span>'+esc(x.disease)+'</span><span>'+((x.probability||0)*100).toFixed(1)+'%</span></div>').join('')+
+      ((d.recommendations||[]).length?'<ul>'+d.recommendations.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+
+      '</div></details>';
   }
-  wrap.appendChild(r);el.appendChild(wrap);$('chat').appendChild(el);window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+  const warnings=(d.warnings||[]).filter(x=>!String(x).includes('prediksi berbasis')).map(x=>'<div class="notice">'+esc(x)+'</div>').join('');
+  b.innerHTML='<div class="assistant-name">HEALTHPREDICT</div><div class="response">'+paragraphs+'</div>'+
+    (pills.length?'<div class="meta">'+pills.join('')+'</div>':'')+detail+warnings+
+    '<div class="safe">Informasi ini bukan diagnosis medis. Jika gejalanya berat atau memburuk, cari bantuan medis.</div>';
+  el.appendChild(b);$('chat').appendChild(el);scrollBottom();
 }
-
 async function sendMessage(e){
-  e.preventDefault();
-  const input=$('message'); const message=input.value.trim(); if(!message)return;
-  addMessage('user',message); input.value=''; input.style.height='auto';
+  e.preventDefault();const input=$('message');const message=input.value.trim();if(!message)return;
+  addMessage('user',message);input.value='';input.style.height='auto';addTyping();
   try{
     const res=await fetch(API+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,session_id:sessionId})});
-    const data=await res.json(); if(!res.ok)throw new Error(data.detail||'Request gagal');
-    sessionId=data.session_id;localStorage.setItem('health_session',sessionId);addResult(data);
-  }catch(err){addMessage('bot','Maaf, terjadi masalah saat memproses keluhan: '+err.message)}
+    const data=await res.json();if(!res.ok)throw new Error(data.detail||'Request gagal');
+    sessionId=data.session_id;localStorage.setItem('health_session',sessionId);removeTyping();addResult(data);
+  }catch(err){removeTyping();addMessage('bot','Maaf, saya mengalami masalah saat memproses pesanmu. Coba kirim lagi beberapa saat lagi.\n\nDetail: '+err.message)}
 }
-function useSuggestion(text){$('message').value=text;$('message').focus()}
-function newChat(){sessionId=crypto.randomUUID();localStorage.setItem('health_session',sessionId);$('chat').innerHTML='';addMessage('bot','Chat baru dimulai. Ceritakan gejala yang kamu rasakan, termasuk sejak kapan jika kamu mengetahuinya.')}
-async function openAdmin(){ $('chatPage').classList.add('hidden');$('composerWrap').classList.add('hidden');$('adminPage').classList.remove('hidden');if(adminToken)await loadAdmin(); }
-function closeAdmin(){ $('adminPage').classList.add('hidden');$('chatPage').classList.remove('hidden');$('composerWrap').classList.remove('hidden'); }
-async function adminLogin(){
+function useSuggestion(text){$('message').value=text;$('message').focus();$('message').dispatchEvent(new Event('input'))}
+async function loadHistory(){
   try{
-    const r=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('adminEmail').value,password:$('adminPassword').value})});
-    const d=await r.json();if(!r.ok)throw new Error(d.detail||'Login gagal');
-    adminToken=d.access_token;localStorage.setItem('health_admin_token',adminToken);await loadAdmin();
-  }catch(e){$('adminError').textContent=e.message}
+    const r=await fetch(API+'/api/history/'+encodeURIComponent(sessionId));if(!r.ok)return;
+    const rows=await r.json();if(!rows.length)return;
+    $('chat').innerHTML='';
+    rows.forEach(x=>{addMessage('user',x.message);addResult(x.result)});
+  }catch(_){}
 }
+function newChat(){sessionId=crypto.randomUUID();localStorage.setItem('health_session',sessionId);$('chat').innerHTML='';addMessage('bot','Chat baru dimulai. Ceritakan apa yang kamu rasakan, termasuk sejak kapan keluhannya muncul jika kamu mengetahuinya.')}
+async function openAdmin(){$('chatPage').classList.add('hidden');$('composerWrap').classList.add('hidden');$('adminPage').classList.remove('hidden');if(adminToken)await loadAdmin()}
+function closeAdmin(){$('adminPage').classList.add('hidden');$('chatPage').classList.remove('hidden');$('composerWrap').classList.remove('hidden')}
+async function adminLogin(){try{const r=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('adminEmail').value,password:$('adminPassword').value})});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Login gagal');adminToken=d.access_token;localStorage.setItem('health_admin_token',adminToken);await loadAdmin()}catch(e){$('adminError').textContent=e.message}}
 function adminHeaders(){return {'Authorization':'Bearer '+adminToken,'Content-Type':'application/json'}}
-async function loadAdmin(){
-  try{
-    const r=await fetch(API+'/admin/dashboard',{headers:adminHeaders()});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Sesi admin tidak valid');
-    $('adminLogin').classList.add('hidden');$('adminDashboard').classList.remove('hidden');
-    $('stats').innerHTML='<div class="metric"><small>Total konsultasi</small><strong>'+d.consultations+'</strong></div><div class="metric"><small>Session pengguna</small><strong>'+d.sessions+'</strong></div><div class="metric"><small>Retrain</small><strong>'+d.retrain_runs+'</strong></div><div class="metric"><small>Status model</small><strong>'+esc(d.model_ready?'Siap':'Belum dilatih')+'</strong></div>';
-    $('metrics').textContent=JSON.stringify(d.metrics||{message:'Belum ada metrik'},null,2);
-    const rr=await fetch(API+'/admin/consultations',{headers:adminHeaders()});const rows=await rr.json();
-    $('adminRows').innerHTML=(rows||[]).map(x=>'<tr><td>'+new Date(x.created_at).toLocaleString('id-ID')+'</td><td>'+esc(x.message)+'</td><td>'+esc(x.result?.disease||'Belum ada prediksi')+'</td></tr>').join('')||'<tr><td colspan="3">Belum ada data.</td></tr>';
-  }catch(e){localStorage.removeItem('health_admin_token');adminToken='';$('adminLogin').classList.remove('hidden');$('adminDashboard').classList.add('hidden');$('adminError').textContent=e.message}
-}
-async function retrain(){
-  $('retrainResult').textContent='Training sedang berjalan...';
-  try{const r=await fetch(API+'/admin/retrain',{method:'POST',headers:adminHeaders(),body:JSON.stringify({dataset_path:$('datasetPath').value})});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Retrain gagal');$('retrainResult').innerHTML='<div class="safe">Retrain berhasil: '+esc(d.model_version)+'</div>';await loadAdmin();}
-  catch(e){$('retrainResult').innerHTML='<div class="notice">'+esc(e.message)+'</div>'}
-}
-function esc(s){const d=document.createElement('div');d.textContent=String(s??'');return d.innerHTML}
+async function loadAdmin(){try{const r=await fetch(API+'/admin/dashboard',{headers:adminHeaders()});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Sesi admin tidak valid');$('adminLogin').classList.add('hidden');$('adminDashboard').classList.remove('hidden');$('stats').innerHTML='<div class="metric"><small>Konsultasi</small><strong>'+d.consultations+'</strong></div><div class="metric"><small>Session</small><strong>'+d.sessions+'</strong></div><div class="metric"><small>Retrain</small><strong>'+d.retrain_runs+'</strong></div><div class="metric"><small>Model</small><strong>'+esc(d.model_ready?'Siap':'Belum')+'</strong></div>';$('metrics').textContent=JSON.stringify(d.metrics||{message:'Belum ada metrik'},null,2);const rr=await fetch(API+'/admin/consultations',{headers:adminHeaders()});const rows=await rr.json();$('adminRows').innerHTML=(rows||[]).map(x=>'<tr><td>'+new Date(x.created_at).toLocaleString('id-ID')+'</td><td>'+esc(x.message)+'</td><td>'+esc(x.result?.disease||'Belum ada prediksi')+'</td></tr>').join('')||'<tr><td colspan="3">Belum ada data.</td></tr>'}catch(e){localStorage.removeItem('health_admin_token');adminToken='';$('adminLogin').classList.remove('hidden');$('adminDashboard').classList.add('hidden');$('adminError').textContent=e.message}}
+async function retrain(){$('retrainResult').textContent='Training sedang berjalan...';try{const r=await fetch(API+'/admin/retrain',{method:'POST',headers:adminHeaders(),body:JSON.stringify({dataset_path:$('datasetPath').value})});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Retrain gagal');$('retrainResult').innerHTML='<div class="safe">Retrain berhasil: '+esc(d.model_version)+'</div>';await loadAdmin()}catch(e){$('retrainResult').innerHTML='<div class="notice">'+esc(e.message)+'</div>'}}
 $('message').addEventListener('input',e=>{e.target.style.height='auto';e.target.style.height=Math.min(e.target.scrollHeight,130)+'px'});
 $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();document.querySelector('.composer').requestSubmit()}});
-addMessage('bot','Halo! Saya HealthPredict. Ceritakan gejala yang kamu rasakan. Saya akan membantu mencocokkan gejala dengan model prediksi penyakit. Hasilnya hanya informasi awal dan bukan diagnosis medis.');
+addMessage('bot','Halo! Saya HealthPredict. Ceritakan keluhanmu dengan bahasa sehari-hari. Kita bisa melanjutkan percakapan, jadi kamu tidak perlu mengulang semua gejala dari awal.');
+loadHistory();
 </script>
 </body>
 </html>
