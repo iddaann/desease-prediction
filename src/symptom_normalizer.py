@@ -119,3 +119,75 @@ def normalize_symptoms(
             normalized.append(result)
 
     return normalized, unknown
+
+
+def extract_symptoms_from_text(message: str, feature_cols: list[str]) -> tuple[list[str], list[str]]:
+    """Ekstrak gejala dari kalimat bebas Bahasa Indonesia/Inggris.
+
+    Mendukung frasa multi-kata, alias, typo ringan, dan negasi sederhana.
+    """
+    text = _clean_text(message)
+    if not text:
+        return [], []
+
+    tokens = text.split()
+    negations = {"tidak", "nggak", "enggak", "gak", "ga", "bukan", "tanpa", "belum"}
+
+    def is_negated(position: int) -> bool:
+        return any(token in negations for token in tokens[max(0, position - 3):position])
+
+    # Cari frasa terpanjang lebih dulu supaya "sakit kepala" tidak diproses
+    # sebagai dua kata yang terpisah.
+    phrases = set(SYMPTOM_ALIASES)
+    phrases.update(_feature_to_text(feature) for feature in feature_cols)
+    ordered_phrases = sorted(phrases, key=lambda item: len(item.split()), reverse=True)
+
+    found = {}
+    for phrase in ordered_phrases:
+        phrase_tokens = phrase.split()
+        size = len(phrase_tokens)
+        if not size:
+            continue
+
+        for i in range(len(tokens) - size + 1):
+            if tokens[i:i + size] != phrase_tokens:
+                continue
+            if is_negated(i):
+                continue
+
+            feature = normalize_symptom(phrase, feature_cols)
+            if feature:
+                found[feature] = phrase
+
+    # Fuzzy matching untuk typo satu kata. Ambang cukup tinggi agar
+    # kata biasa tidak mudah dianggap sebagai gejala.
+    feature_lookup = {
+        _feature_to_text(feature): feature
+        for feature in feature_cols
+    }
+    for i, token in enumerate(tokens):
+        if len(token) < 5 or is_negated(i):
+            continue
+
+        close = get_close_matches(
+            token,
+            list(feature_lookup.keys()),
+            n=1,
+            cutoff=0.90,
+        )
+        if close:
+            found[feature_lookup[close[0]]] = token
+            continue
+
+        alias_close = get_close_matches(
+            token,
+            list(SYMPTOM_ALIASES.keys()),
+            n=1,
+            cutoff=0.92,
+        )
+        if alias_close:
+            alias_feature = SYMPTOM_ALIASES[alias_close[0]]
+            if alias_feature in feature_cols:
+                found[alias_feature] = token
+
+    return sorted(found), []
