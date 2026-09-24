@@ -8,8 +8,7 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from api.auth import create_session, get_current_user, require_admin
 from api.chat_schemas import ChatRequest, RetrainRequest
@@ -86,13 +85,14 @@ def health():
         logger.exception("Health check database failed")
     model_ok = available()
     healthy = db_ok and model_ok
-    return {
+    payload = {
         "status": "ok" if healthy else "degraded",
         "database": "ok" if db_ok else "error",
         "model_ready": model_ok,
         "model_version": version(),
         "environment": os.getenv("ENVIRONMENT", "development"),
     }
+    return JSONResponse(status_code=200 if healthy else 503, content=payload)
 
 @app.get("/")
 def root():
