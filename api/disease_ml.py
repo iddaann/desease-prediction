@@ -300,9 +300,7 @@ def predict_from_symptoms(symptoms, safety_alerts=None):
             "Sebelum melihat hasil model, saya ingin menekankan bahwa beberapa tanda yang kamu sebutkan "
             "dapat memerlukan penilaian medis segera. Jangan gunakan prediksi model ini untuk menentukan "
             "apakah kondisi tersebut aman ditunggu. Jika gejalanya berat, memburuk, atau sesuai dengan "
-            "tanda darurat, cari pertolongan medis segera.
-
-"
+            "tanda darurat, cari pertolongan medis segera.\n\n"
             "Model tetap dapat menunjukkan kecocokan pola gejala untuk tujuan pembelajaran, tetapi hasilnya "
             "bukan diagnosis dan bukan pengganti pemeriksaan tenaga kesehatan."
         )
@@ -315,9 +313,7 @@ def predict_from_symptoms(symptoms, safety_alerts=None):
         response_text = (
             f"Saya sudah menangkap {len(normalized)} gejala dari ceritamu, tetapi model masih belum cukup yakin "
             f"untuk mengarah pada satu kondisi tertentu. Kecocokan model tertinggi saat ini adalah {top['disease']} "
-            f"dengan skor model {model_score * 100:.1f}%.
-
-"
+            f"dengan skor model {model_score * 100:.1f}%.\n\n"
             "Kalau kamu mau, lanjutkan ceritanya. Misalnya jelaskan sejak kapan gejala muncul, seberapa berat, "
             "dan apakah ada keluhan lain. Saya akan menggabungkan informasi dari pesan-pesan sebelumnya."
         )
