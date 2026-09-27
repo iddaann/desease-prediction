@@ -183,3 +183,35 @@ The `/health` endpoint returns HTTP 503 when the database or model is unavailabl
 ## Catatan SRS
 Implementasi ini mempertahankan bagian SRS yang masih relevan untuk konsep chatbot: preprocessing, klasifikasi, confidence score, rekomendasi, penyimpanan riwayat, evaluasi model, retraining, keamanan, dan antarmuka web responsif.
 Bagian SRS yang khusus untuk lingkungan rumah sakit seperti estimasi lama rawat inap dan billing tidak digunakan karena konsep produk yang diimplementasikan adalah chatbot prediksi penyakit berbasis gejala.
+
+## Evaluasi ML dan batasan penggunaan
+
+HealthPredict diposisikan sebagai **project pembelajaran machine learning**, bukan alat diagnosis medis. Model saat ini mempelajari dataset gejala-penyakit publik dan hasil evaluasinya hanya menggambarkan performa pada dataset tersebut. Skor model pada prediksi bukan probabilitas diagnosis yang terkalibrasi.
+
+Sebelum eksperimen model, audit dataset dapat dijalankan:
+
+```powershell
+python scripts/dataset_audit.py
+```
+
+Laporan tersimpan di `reports/dataset_audit.json` dan memeriksa ukuran dataset, distribusi kelas, duplicate, missing value, jumlah gejala per baris, feature non-biner, perbedaan kelas train/test, dan exact feature-vector overlap.
+
+Untuk membandingkan baseline classifier:
+
+```powershell
+python scripts/model_compare.py
+```
+
+Laporan tersimpan di `reports/model_comparison.json`. Perbandingan menggunakan accuracy dan macro precision/recall/F1 serta cross-validation macro F1; jangan memilih model hanya dari accuracy.
+
+Evaluasi training model juga menyimpan:
+- holdout accuracy, weighted/macro precision, recall, dan F1;
+- confusion matrix dan classification report per kelas;
+- cross-validation accuracy dan macro F1;
+- evaluasi tambahan terhadap `data/Testing.csv` jika tersedia.
+
+Input dengan tanda peringatan seperti sesak berat, nyeri dada berat, pingsan, kejang, atau penurunan kesadaran memicu safety alert sebelum hasil model ditafsirkan. Safety layer ini bukan diagnosis; tujuannya mencegah output model menjadi satu-satunya dasar ketika terdapat tanda yang membutuhkan perhatian segera.
+
+### Batasan dataset
+
+Dataset publik/sederhana dapat berbeda jauh dari data klinis nyata. Karena itu, metric tinggi pada dataset ini **tidak boleh ditafsirkan sebagai validasi klinis atau bukti bahwa model akurat untuk masyarakat umum**. Project ini tidak melakukan clinical validation.
