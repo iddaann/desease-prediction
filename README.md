@@ -236,6 +236,70 @@ Project juga menyediakan `scripts/robustness_test.py` untuk menguji perilaku mod
 
 Eksperimen ini ditujukan untuk pembelajaran dan pengujian robustness chatbot, bukan simulasi pasien atau validasi klinis. Penghapusan gejala secara sintetis tidak mewakili cara pasien sebenarnya mendeskripsikan keluhan.
 
+
+
+### Ringkasan hasil evaluasi model saat ini
+
+Eksperimen dilakukan pada pola gejala unik setelah deduplikasi. Data dibagi menjadi training dan holdout secara stratified dengan random state 42. Karena jumlah minimum sampel per kelas pada training split adalah 4, cross-validation menggunakan 3 fold.
+
+Hasil perbandingan model:
+
+| Model | Holdout Accuracy | Holdout Macro F1 | CV Macro F1 |
+|---|---:|---:|---:|
+| Logistic Regression | 1.0000 | 1.0000 | 1.0000 ± 0.0000 |
+| SVM RBF | 1.0000 | 1.0000 | 1.0000 ± 0.0000 |
+| Random Forest | 1.0000 | 1.0000 | 0.9946 ± 0.0077 |
+
+Hasil tersebut menunjukkan bahwa ketiga baseline dapat memisahkan kelas dengan sangat baik pada dataset yang tersedia. Namun, angka 1.0000 tidak boleh dianggap sebagai performa klinis atau performa yang pasti terjadi pada data pengguna nyata. Struktur dataset yang sangat teratur dan tingginya duplikasi pola gejala menjadi keterbatasan penting.
+
+Random Forest juga diuji dengan holdout yang benar-benar tidak digunakan saat fitting model robustness. Hasil pengurangan informasi gejala secara sintetis:
+
+| Kondisi input | Accuracy | Macro F1 |
+|---|---:|---:|
+| Gejala lengkap | 1.0000 | 1.0000 |
+| Dikurangi 1 gejala | 0.9344 | 0.9024 |
+| Dikurangi 2 gejala | 0.9508 | 0.9220 |
+| Dikurangi 3 gejala | 0.8689 | 0.8070 |
+
+Nilai tersebut menunjukkan bahwa performa model berubah ketika informasi gejala dikurangi. Hasil "dikurangi 2 gejala" yang sedikit lebih tinggi daripada "dikurangi 1 gejala" tidak diartikan bahwa lebih sedikit gejala selalu menghasilkan prediksi lebih baik; penghapusan dilakukan secara sintetis sehingga variasi kombinasi gejala dapat menghasilkan perbedaan tersebut.
+
+### Feature importance Random Forest
+
+Eksperimen feature importance dilakukan menggunakan Random Forest yang hanya dilatih pada training split. Lima belas fitur dengan importance tertinggi pada eksperimen saat ini adalah:
+
+| Rank | Feature | Importance |
+|---:|---|---:|
+| 1 | vomiting | 0.019036 |
+| 2 | fatigue | 0.017979 |
+| 3 | muscle_pain | 0.017686 |
+| 4 | sweating | 0.016620 |
+| 5 | diarrhoea | 0.015986 |
+| 6 | itching | 0.015144 |
+| 7 | extra_marital_contacts | 0.014792 |
+| 8 | headache | 0.014757 |
+| 9 | weight_loss | 0.014023 |
+| 10 | abdominal_pain | 0.013660 |
+| 11 | joint_pain | 0.013538 |
+| 12 | pus_filled_pimples | 0.013529 |
+| 13 | high_fever | 0.013416 |
+| 14 | bladder_discomfort | 0.013376 |
+| 15 | yellowing_of_eyes | 0.013341 |
+
+Feature importance ini hanya menjelaskan kontribusi relatif fitur terhadap keputusan Random Forest pada dataset eksperimen. Nilai tersebut bukan ukuran tingkat kepentingan medis suatu gejala dan bukan bukti hubungan sebab-akibat.
+
+### Kesimpulan evaluasi
+
+Berdasarkan eksperimen yang sudah dilakukan, pipeline ML saat ini telah mencakup:
+- audit kualitas dan duplikasi dataset;
+- stratified holdout evaluation;
+- perbandingan Logistic Regression, SVM RBF, dan Random Forest;
+- cross-validation macro F1;
+- evaluasi robustness ketika sebagian gejala dihilangkan;
+- analisis feature importance Random Forest;
+- pengecekan keterbatasan `Testing.csv` sebagai validation set.
+
+Hasil evaluasi cukup untuk mendokumentasikan project ini sebagai eksperimen pembelajaran machine learning end-to-end. Namun, hasil tersebut belum cukup untuk menyatakan bahwa model tervalidasi untuk diagnosis atau penggunaan klinis. Validasi yang lebih kuat memerlukan data independen dan representatif serta validasi medis yang berada di luar cakupan project pembelajaran ini.
+
 ### Analisis perilaku model
 
 `scripts/model_compare.py` juga menyimpan 15 fitur dengan nilai feature importance tertinggi dari Random Forest ke `reports/model_comparison.json`. Feature importance digunakan untuk mempelajari perilaku model terhadap fitur gejala, bukan untuk menyimpulkan hubungan medis atau penyebab penyakit.
