@@ -74,15 +74,29 @@ Buka: http://127.0.0.1:8000/
 
 Frontend sekarang dilayani langsung oleh FastAPI, sehingga tidak perlu lagi membuka frontend/index.html lewat Live Server.
 
-## Environment
-Contoh:
+## Database dan Environment
+
+Aplikasi **sudah memiliki kode inisialisasi database**, tetapi file database tidak disimpan di repository.
+
+Saat berjalan di development tanpa `DATABASE_URL`, aplikasi menggunakan SQLite pada:
 ```text
+data/app.db
+```
+
+Tabel akan dibuat otomatis ketika backend dijalankan karena `api.main` memanggil `init_db()` saat startup. Jadi tidak perlu membuat tabel SQLite secara manual.
+
+Untuk production, aplikasi menggunakan PostgreSQL jika `DATABASE_URL` tersedia. Repository juga menyediakan `render.yaml` yang mendefinisikan database PostgreSQL untuk deployment Render. File konfigurasi tersebut **belum berarti database production sudah dibuat atau sudah terhubung**; database production baru tersedia setelah service/deployment Render benar-benar dibuat dan environment variable `DATABASE_URL` diberikan.
+
+Contoh environment development:
+```text
+ENVIRONMENT=development
 ADMIN_NAME=Administrator
 ADMIN_EMAIL=admin@healthbot.local
 ADMIN_PASSWORD=ganti-password-kuat
 DATA_ENCRYPTION_KEY=<Fernet key>
 DATABASE_PATH=data/app.db
-CORS_ORIGINS=https://domain-frontend.example
+CORS_ORIGINS=
+LOG_LEVEL=INFO
 ```
 Generate Fernet key:
 ```powershell
@@ -93,12 +107,16 @@ Untuk deployment, gunakan secret manager/environment variables dan jangan commit
 Jika DATA_ENCRYPTION_KEY tidak diset, mode development menyimpan field konsultasi dengan prefix plain:. Untuk production, **wajib** mengatur DATA_ENCRYPTION_KEY.
 
 ## Akun administrator development
-Default:
+
+Pada mode development, aplikasi menggunakan nilai default berikut **hanya jika environment variable belum diatur**:
 ```text
 Email    : admin@healthbot.local
-Password : admin123
+Password : gunakan nilai ADMIN_PASSWORD milik environment lokal
 ```
-Untuk deployment, ubah melalui ADMIN_EMAIL dan ADMIN_PASSWORD sebelum database pertama kali dibuat.
+
+Sebaiknya tetap mengatur `ADMIN_EMAIL` dan `ADMIN_PASSWORD` sendiri pada environment lokal. Untuk production, keduanya **wajib** diisi dan tidak boleh menggunakan password default.
+
+Perlu diperhatikan bahwa `seed_demo_users()` hanya membuat akun administrator ketika email tersebut belum ada di database. Mengubah `ADMIN_PASSWORD` setelah akun sudah tersimpan tidak otomatis mengganti password hash yang sudah ada.
 
 ## API
 GET /health
@@ -171,14 +189,24 @@ The `/health` endpoint returns HTTP 503 when the database or model is unavailabl
 
 ## Deployment checklist
 1. Gunakan HTTPS pada reverse proxy/platform deployment.
-2. Ganti akun administrator default melalui environment variables sebelum database dibuat.
-3. Set DATA_ENCRYPTION_KEY.
-4. Set CORS_ORIGINS hanya ke origin frontend yang diperlukan.
-5. Gunakan persistent storage untuk data/app.db jika memakai SQLite.
-6. Untuk skala besar, migrasikan database ke PostgreSQL.
+2. Set `ADMIN_EMAIL` dan `ADMIN_PASSWORD` production sebelum database pertama kali diinisialisasi.
+3. Set `DATA_ENCRYPTION_KEY`.
+4. Set `CORS_ORIGINS` hanya ke origin frontend yang diperlukan.
+5. Untuk SQLite, gunakan persistent storage karena `data/app.db` adalah file lokal.
+6. Untuk production yang menggunakan Render, pastikan PostgreSQL service benar-benar sudah dibuat dan `DATABASE_URL` terisi.
 7. Jangan mengunggah model/data dari sumber yang tidak dipercaya.
 8. Uji model menggunakan dataset yang representatif sebelum penggunaan nyata.
 9. Monitor confidence rendah dan error model secara berkala.
+
+### Status database saat ini
+
+Repository ini sudah menyediakan **skema dan inisialisasi database**, tetapi tidak menyimpan database production di Git.
+
+- Development: SQLite `data/app.db` dibuat otomatis saat aplikasi pertama kali dijalankan.
+- Production: PostgreSQL dikonfigurasi melalui `DATABASE_URL`.
+- Render: `render.yaml` mendefinisikan resource PostgreSQL, tetapi resource tersebut baru benar-benar tersedia setelah deployment/provisioning Render dilakukan.
+
+Jadi, untuk kondisi repository saat ini, yang sudah dibuat adalah **kode database dan skemanya**, bukan database production yang sudah online.
 
 ## Catatan SRS
 Implementasi ini mempertahankan bagian SRS yang masih relevan untuk konsep chatbot: preprocessing, klasifikasi, confidence score, rekomendasi, penyimpanan riwayat, evaluasi model, retraining, keamanan, dan antarmuka web responsif.
