@@ -69,13 +69,24 @@ def _load_dataset(path):
     df = _clean(pd.read_csv(path))
     if "prognosis" not in df.columns:
         raise ValueError("Dataset harus memiliki kolom target 'prognosis'.")
-    df = df.dropna(subset=["prognosis"]).drop_duplicates().reset_index(drop=True)
+    raw_rows = len(df)
+    df = df.dropna(subset=["prognosis"])
+    rows_before_dedup = len(df)
+    df = df.drop_duplicates().reset_index(drop=True)
     features = [c for c in df.columns if c != "prognosis"]
     if len(df) < 20:
         raise ValueError("Dataset terlalu kecil. Gunakan dataset gejala-penyakit yang lengkap.")
     if df["prognosis"].nunique() < 2:
         raise ValueError("Dataset harus memiliki minimal dua kelas penyakit.")
-    return df, features
+    data_quality = {
+        "raw_rows": int(raw_rows),
+        "rows_after_deduplication": int(len(df)),
+        "duplicate_rows_removed": int(rows_before_dedup - len(df)),
+        "unique_feature_vectors_after_deduplication": int(
+            df[features].astype(str).agg("|".join, axis=1).nunique()
+        ),
+    }
+    return df, features, data_quality
 
 
 def _evaluate(y_true, pred, proba, encoder, prefix=""):
@@ -121,7 +132,7 @@ def _evaluate(y_true, pred, proba, encoder, prefix=""):
 
 def train(dataset_path="data/Training.csv"):
     path = (BASE_DIR / dataset_path).resolve()
-    df, features = _load_dataset(path)
+    df, features, data_quality = _load_dataset(path)
     X = df[features].apply(pd.to_numeric, errors="coerce").fillna(0)
     y = df["prognosis"].astype(str)
 
@@ -184,10 +195,21 @@ def train(dataset_path="data/Training.csv"):
             external_y = encoder.transform(test_df["prognosis"].astype(str))
             external_pred = model.predict(external_X)
             external_proba = model.predict_proba(external_X)
+            train_vectors = set(X.astype(str).agg("|".join, axis=1))
+            test_vectors = set(external_X.astype(str).agg("|".join, axis=1))
+            exact_overlap = len(train_vectors.intersection(test_vectors))
             external = {
                 "dataset_name": testing_path.name,
                 "samples_evaluated": len(test_df),
                 "unknown_classes_skipped": unknown_classes,
+                "exact_feature_vector_overlap_with_training": exact_overlap,
+                "independent_validation": exact_overlap == 0,
+                "warning": (
+                    "This file is not an independent validation set because one or more "
+                    "feature vectors overlap with the training data."
+                    if exact_overlap
+                    else "No exact feature-vector overlap detected."
+                ),
                 "metrics": _evaluate(external_y, external_pred, external_proba, encoder),
             }
 
@@ -203,6 +225,7 @@ def train(dataset_path="data/Training.csv"):
         "samples": len(df),
         "features": len(features),
         "classes": len(encoder.classes_),
+        "data_quality": data_quality,
         "evaluation_note": (
             "Model scores are classifier outputs on the supplied dataset; they are not calibrated "
             "clinical probabilities or medical diagnoses."
@@ -219,6 +242,7 @@ def train(dataset_path="data/Training.csv"):
         "samples": len(df),
         "features": len(features),
         "classes": len(encoder.classes_),
+        "data_quality": data_quality,
         "metrics": metrics_payload,
     }
 
