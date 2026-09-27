@@ -229,3 +229,13 @@ Audit terhadap file yang ada di repository menunjukkan beberapa hal penting:
 - Karena itu, `Testing.csv` **tidak layak dianggap sebagai independent external validation set** untuk project ini. Model tetap boleh menggunakannya sebagai evaluasi eksploratif, tetapi hasilnya harus diberi catatan keterbatasan.
 
 Implikasinya, project sekarang sengaja melakukan `drop_duplicates()` sebelum training dan menambahkan evaluasi holdout serta cross-validation. Langkah berikutnya yang lebih kuat adalah mencari dataset yang benar-benar independen jika ingin menguji generalisasi model.
+
+### Eksperimen robustness input gejala
+
+Project juga menyediakan `scripts/robustness_test.py` untuk menguji perilaku model ketika informasi gejala tidak lengkap. Eksperimen menggunakan pola gejala unik setelah deduplikasi, mengambil holdout, lalu menghapus secara sintetis 1, 2, dan 3 gejala positif dari setiap input. Hasil disimpan di `reports/robustness_report.json`.
+
+Eksperimen ini ditujukan untuk pembelajaran dan pengujian robustness chatbot, bukan simulasi pasien atau validasi klinis. Penghapusan gejala secara sintetis tidak mewakili cara pasien sebenarnya mendeskripsikan keluhan.
+
+### Analisis perilaku model
+
+`scripts/model_compare.py` juga menyimpan 15 fitur dengan nilai feature importance tertinggi dari Random Forest ke `reports/model_comparison.json`. Feature importance digunakan untuk mempelajari perilaku model terhadap fitur gejala, bukan untuk menyimpulkan hubungan medis atau penyebab penyakit.
