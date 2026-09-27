@@ -1,0 +1,123 @@
+"""Compare baseline classifiers on the same train/validation split.
+
+Usage:
+    python scripts/model_compare.py
+"""
+
+import json
+from pathlib import Path
+
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.svm import SVC
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+REPORT_DIR = BASE_DIR / "reports"
+
+
+def load_data():
+    df = pd.read_csv(BASE_DIR / "data" / "Training.csv")
+    df = df.drop(columns=[c for c in df.columns if c.lower().startswith("unnamed")], errors="ignore")
+    df = df.dropna(subset=["prognosis"]).drop_duplicates().reset_index(drop=True)
+    features = [c for c in df.columns if c != "prognosis"]
+    X = df[features].apply(pd.to_numeric, errors="coerce").fillna(0)
+    encoder = LabelEncoder()
+    y = encoder.fit_transform(df["prognosis"].astype(str))
+    return X, y
+
+
+def evaluate(name, model, X_train, X_test, y_train, y_test, cv):
+    model.fit(X_train, y_train)
+    pred = model.predict(X_test)
+    cv_f1 = cross_val_score(model, X_train, y_train, cv=cv, scoring="f1_macro", n_jobs=1, error_score="raise")
+    return {
+        "model": name,
+        "holdout_accuracy": round(float(accuracy_score(y_test, pred)), 4),
+        "holdout_precision_macro": round(float(precision_score(y_test, pred, average="macro", zero_division=0)), 4),
+        "holdout_recall_macro": round(float(recall_score(y_test, pred, average="macro", zero_division=0)), 4),
+        "holdout_f1_macro": round(float(f1_score(y_test, pred, average="macro", zero_division=0)), 4),
+        "cv_f1_macro_mean": round(float(cv_f1.mean()), 4),
+        "cv_f1_macro_std": round(float(cv_f1.std()), 4),
+    }
+
+
+def main():
+    X, y = load_data()
+    min_class = int(pd.Series(y).value_counts().min())
+    if min_class < 2:
+        raise ValueError("Setiap kelas harus memiliki minimal dua contoh.")
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=max(0.2, 2 / len(X)), random_state=42, stratify=y
+    )
+
+    # CV must be based on the training split, not the full dataset.
+    # After stratified holdout, some classes can have fewer samples than
+    # they had before the split. Use the actual minimum class count here.
+    train_min_class = int(pd.Series(y_train).value_counts().min())
+    if train_min_class < 2:
+        raise ValueError("Data training terlalu sedikit untuk cross-validation.")
+
+    cv = StratifiedKFold(
+        n_splits=min(3, train_min_class),
+        shuffle=True,
+        random_state=42,
+    )
+
+    models = [
+        ("Logistic Regression", LogisticRegression(max_iter=1000, class_weight="balanced")),
+        ("SVM RBF", SVC(class_weight="balanced", cache_size=512)),
+        ("Random Forest", RandomForestClassifier(
+            n_estimators=100, random_state=42, n_jobs=-1, class_weight="balanced_subsample"
+        )),
+    ]
+
+    print(f"Training samples: {len(X_train)} | Holdout samples: {len(X_test)}")
+    print(f"CV folds: {cv.n_splits} | Minimum training samples per class: {train_min_class}")
+
+    results = [evaluate(name, model, X_train, X_test, y_train, y_test, cv) for name, model in models]
+
+    # Feature importance is a learning-oriented model behavior experiment.
+    rf = RandomForestClassifier(
+        n_estimators=100,
+        random_state=42,
+        n_jobs=-1,
+        class_weight="balanced_subsample",
+    )
+    rf.fit(X_train, y_train)
+    importance = sorted(
+        zip(X_train.columns, rf.feature_importances_),
+        key=lambda item: item[1],
+        reverse=True,
+    )[:15]
+
+    payload = {
+        "purpose": "Educational model comparison; metrics do not imply clinical validity.",
+        "results": results,
+        "feature_importance_random_forest": [
+            {"feature": feature, "importance": round(float(value), 6)}
+            for feature, value in importance
+        ],
+        "selection_note": "Do not select a model from accuracy alone; inspect macro F1, recall, confusion matrix, feature behavior, and dataset limitations.",
+    }
+
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    output = REPORT_DIR / "model_comparison.json"
+    output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    print("=== HealthPredict Model Comparison ===")
+    for item in results:
+        print(
+            f"{item['model']}: accuracy={item['holdout_accuracy']} "
+            f"macro_f1={item['holdout_f1_macro']} "
+            f"cv_macro_f1={item['cv_f1_macro_mean']}±{item['cv_f1_macro_std']}"
+        )
+    print("report:", output)
+
+
+if __name__ == "__main__":
+    main()
