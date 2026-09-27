@@ -215,3 +215,17 @@ Input dengan tanda peringatan seperti sesak berat, nyeri dada berat, pingsan, ke
 ### Batasan dataset
 
 Dataset publik/sederhana dapat berbeda jauh dari data klinis nyata. Karena itu, metric tinggi pada dataset ini **tidak boleh ditafsirkan sebagai validasi klinis atau bukti bahwa model akurat untuk masyarakat umum**. Project ini tidak melakukan clinical validation.
+
+
+### Temuan audit dataset saat ini
+
+Audit terhadap file yang ada di repository menunjukkan beberapa hal penting:
+
+- `data/Training.csv`: 4.920 baris, 132 feature gejala, dan 41 kelas penyakit.
+- Distribusi kelas training terlihat seimbang: 120 baris per kelas sebelum duplicate dihapus.
+- Setelah melihat kombinasi feature gejala, hanya 304 kombinasi feature yang unik; 4.616 baris merupakan duplikasi kombinasi feature yang sama dengan target yang sama.
+- `data/Testing.csv`: 42 baris dan 41 kelas.
+- 41 dari 42 kombinasi feature pada testing memiliki kecocokan persis dengan kombinasi feature yang sudah ada di training.
+- Karena itu, `Testing.csv` **tidak layak dianggap sebagai independent external validation set** untuk project ini. Model tetap boleh menggunakannya sebagai evaluasi eksploratif, tetapi hasilnya harus diberi catatan keterbatasan.
+
+Implikasinya, project sekarang sengaja melakukan `drop_duplicates()` sebelum training dan menambahkan evaluasi holdout serta cross-validation. Langkah berikutnya yang lebih kuat adalah mencari dataset yang benar-benar independen jika ingin menguji generalisasi model.
