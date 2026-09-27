@@ -109,17 +109,17 @@ function addResult(d){
   const text=d.response_text||d.message||'Saya sudah memproses keluhanmu.';
   const paragraphs=esc(text).split('\n\n').map(x=>'<p>'+x.replace(/\n/g,'<br>')+'</p>').join('');
   const pills=[];
-  if(d.confidence_score!=null)pills.push('<span class="pill">Confidence '+((d.confidence_score||0)*100).toFixed(1)+'%</span>');
+  if(d.model_score!=null)pills.push('<span class="pill">Skor model '+((d.model_score||0)*100).toFixed(1)+'%</span>');
   (d.recognized_symptoms||[]).slice(0,6).forEach(x=>pills.push('<span class="pill">'+esc(x.replaceAll('_',' '))+'</span>'));
   let detail='';
   if((d.candidates||[]).length){
     detail='<details class="details"><summary>Lihat detail hasil model</summary><div class="detail-content">'+
       '<div class="candidate-line"><b>Kemungkinan teratas</b><span>'+esc(d.disease||'-')+'</span></div>'+
-      (d.candidates||[]).map(x=>'<div class="candidate-line"><span>'+esc(x.disease)+'</span><span>'+((x.probability||0)*100).toFixed(1)+'%</span></div>').join('')+
+      (d.candidates||[]).map(x=>'<div class="candidate-line"><span>'+esc(x.disease)+'</span><span>'+((x.model_score||0)*100).toFixed(1)+'%</span></div>').join('')+
       ((d.recommendations||[]).length?'<ul>'+d.recommendations.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+
       '</div></details>';
   }
-  const warnings=(d.warnings||[]).filter(x=>!String(x).includes('prediksi berbasis')).map(x=>'<div class="notice">'+esc(x)+'</div>').join('');
+  const warnings=(d.warnings||[]).map(x=>'<div class="notice">'+esc(x)+'</div>').join('');
   b.innerHTML='<div class="assistant-name">HEALTHPREDICT</div><div class="response">'+paragraphs+'</div>'+
     (pills.length?'<div class="meta">'+pills.join('')+'</div>':'')+detail+warnings+
     '<div class="safe">Informasi ini bukan diagnosis medis. Jika gejalanya berat atau memburuk, cari bantuan medis.</div>';
