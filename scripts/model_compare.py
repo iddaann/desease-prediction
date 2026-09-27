@@ -80,10 +80,29 @@ def main():
     print(f"CV folds: {cv.n_splits} | Minimum training samples per class: {train_min_class}")
 
     results = [evaluate(name, model, X_train, X_test, y_train, y_test, cv) for name, model in models]
+
+    # Feature importance is a learning-oriented model behavior experiment.
+    rf = RandomForestClassifier(
+        n_estimators=100,
+        random_state=42,
+        n_jobs=-1,
+        class_weight="balanced_subsample",
+    )
+    rf.fit(X_train, y_train)
+    importance = sorted(
+        zip(X_train.columns, rf.feature_importances_),
+        key=lambda item: item[1],
+        reverse=True,
+    )[:15]
+
     payload = {
         "purpose": "Educational model comparison; metrics do not imply clinical validity.",
         "results": results,
-        "selection_note": "Do not select a model from accuracy alone; inspect macro F1, recall, confusion matrix, and dataset limitations.",
+        "feature_importance_random_forest": [
+            {"feature": feature, "importance": round(float(value), 6)}
+            for feature, value in importance
+        ],
+        "selection_note": "Do not select a model from accuracy alone; inspect macro F1, recall, confusion matrix, feature behavior, and dataset limitations.",
     }
 
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
