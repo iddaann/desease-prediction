@@ -129,7 +129,7 @@ def chat(payload: ChatRequest):
 
     # Jika user hanya melanjutkan percakapan tanpa menambahkan gejala,
     # berikan jawaban berbasis hasil terakhir alih-alih memulai prediksi dari nol.
-    if not extracted and previous_result and previous_result.get("response_text"):
+    if not extracted and previous_result and previous_result.get("response_text") and not safety_alerts:
         result = dict(previous_result)
         result["response_text"] = (
             "Tentu, kita bisa lanjut dari pembahasan sebelumnya.\n\n"
