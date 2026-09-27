@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from api.auth import create_session, get_current_user, require_admin
 from api.chat_schemas import ChatRequest, RetrainRequest
 from api.db import connect, database_health, decrypt_text, encrypt_text, init_db, utcnow, verify_password
-from api.disease_ml import available, feature_list, metrics as model_metrics, predict_from_symptoms, extract_symptoms, train, version
+from api.disease_ml import available, detect_red_flags, feature_list, metrics as model_metrics, predict_from_symptoms, extract_symptoms, train, version
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
@@ -125,6 +125,7 @@ def chat(payload: ChatRequest):
 
     extracted, unknown = extract_symptoms(payload.message, payload.symptoms)
     merged = list(dict.fromkeys(previous_symptoms + extracted))
+    safety_alerts = detect_red_flags(payload.message)
 
     # Jika user hanya melanjutkan percakapan tanpa menambahkan gejala,
     # berikan jawaban berbasis hasil terakhir alih-alih memulai prediksi dari nol.
@@ -137,7 +138,7 @@ def chat(payload: ChatRequest):
         result["recognized_symptoms"] = merged
         result["session_id"] = session_id
     else:
-        result = predict_from_symptoms(merged)
+        result = predict_from_symptoms(merged, safety_alerts=safety_alerts)
         result["recognized_symptoms"] = merged
         result["unknown_symptoms"] = unknown
         result["session_id"] = session_id
