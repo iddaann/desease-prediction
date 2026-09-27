@@ -322,9 +322,7 @@ def predict_from_symptoms(symptoms, safety_alerts=None):
         message = "Berdasarkan gejala yang dikenali, berikut kemungkinan teratas dari model."
         response_text = (
             f"Dari gejala yang kamu ceritakan, kecocokan pola tertinggi menurut model adalah {top['disease']} "
-            f"dengan skor model {model_score * 100:.1f}%.
-
-"
+            f"dengan skor model {model_score * 100:.1f}%.\n\n"
             "Hasil ini adalah eksperimen klasifikasi berbasis dataset dan bukan diagnosis medis. "
             "Kamu bisa melanjutkan percakapan dengan menambahkan gejala lain agar input model lebih lengkap."
         )
