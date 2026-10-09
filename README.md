@@ -1,50 +1,83 @@
-# Disease Prediction
+# Disease Prediction (Edukasi)
 
-Prediksi penyakit dari checklist gejala, menggunakan Random Forest.
-Dataset: [Disease Prediction Using Machine Learning](https://www.kaggle.com/datasets/kaushil268/disease-prediction-using-machine-learning) (132 gejala biner -> 41 penyakit).
+Aplikasi eksperimen machine learning untuk memetakan daftar gejala ke beberapa label penyakit menggunakan Random Forest. **Aplikasi ini bukan alat diagnosis, bukan pengganti tenaga kesehatan, dan belum divalidasi untuk penggunaan klinis.**
 
-## Struktur
+Dataset yang digunakan berasal dari [Disease Prediction Using Machine Learning di Kaggle](https://www.kaggle.com/datasets/kaushil268/disease-prediction-using-machine-learning). Dataset publik yang terstruktur dapat memiliki kombinasi gejala berulang dan pola label yang terlalu sederhana dibandingkan kondisi pasien nyata.
+
+## Struktur proyek
 
 ```
-data/          Dataset mentah (Training.csv, Testing.csv)
+api/                 FastAPI API dan skema request/response
+data/                Training.csv dan Testing.csv
+frontend/index.html  UI chat sederhana
+models/              Artefak model yang telah dilatih
+notebooks/            Analisis dan eksperimen
 src/
-  preprocessing.py   Load & bersihkan data
-  train.py           Latih model, simpan ke models/
-  evaluate.py         Uji model ke data testing
-  pewdict.py         Fungsi prediksi dari daftar gejala
-models/        Artefak hasil training (.joblib)
-api/
-  main.py       FastAPI app, endpoint /predict
-  schemas.py    Skema request/response
-notebooks/      (belum diisi -- untuk eksplorasi & dokumentasi analisis)
+  preprocessing.py   Load/bersihkan data
+  train.py           Latih model
+  evaluate.py        Evaluasi pada data testing
+  evaluate_cv.py     Cross-validation dengan grouping kombinasi gejala
+  pewdict.py         Prediksi dari daftar gejala
+  symptom_normalizer.py Normalisasi gejala
 ```
 
-## Cara Pakai
+## Menjalankan lokal
+
+Disarankan Python 3.11 atau 3.12 untuk menyesuaikan image Docker.
 
 ```bash
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 
-# Latih model (hasil disimpan ke models/)
+# Latih ulang model dari dataset yang tersedia
 python src/train.py
 
-# Evaluasi ke data testing
+# Evaluasi data testing terpisah
 python src/evaluate.py
+
+# Evaluasi silang dengan grouping kombinasi gejala
+python src/evaluate_cv.py
 
 # Jalankan API
 uvicorn api.main:app --reload
 ```
 
-Contoh request ke API:
+API docs tersedia di `http://127.0.0.1:8000/docs`; health check di `/health`.
 
-```bash
-curl -X POST http://localhost:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{"symptoms": ["itching", "skin_rash", "high_fever"]}'
+## Frontend
+
+Buka `frontend/index.html` melalui server lokal, misalnya VS Code Live Server. Frontend memakai `API_URL` yang bisa diatur melalui konfigurasi sebelum deploy. Jangan gunakan URL loopback (`127.0.0.1`) untuk backend yang di-hosting karena alamat tersebut menunjuk ke perangkat pengguna.
+
+Untuk deployment, set environment variable `CORS_ORIGINS` ke daftar origin frontend yang diizinkan, dipisahkan koma, contoh:
+
+```text
+CORS_ORIGINS=https://aplikasi-anda.example
 ```
 
-## Performa Model
+Jangan gunakan wildcard CORS untuk aplikasi produksi. Pastikan URL backend memakai HTTPS jika frontend juga HTTPS.
 
-Random Forest (200 trees) mencapai **97.62% akurasi** di data testing (41/42 benar).
-Catatan: dataset ini bersifat deterministik (tiap penyakit punya kombinasi gejala tetap),
-jadi akurasi tinggi ini wajar dan bukan indikasi model akan seakurat ini pada gejala
-pasien sungguhan yang lebih beragam/ambigu.
+## Request API
+
+```bash
+curl -X POST http://127.0.0.1:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"symptoms":["itching","skin_rash"]}'
+```
+
+## Interpretasi hasil
+
+- Nilai dari `predict_proba` adalah skor keluaran model, **bukan probabilitas klinis yang terkalibrasi**.
+- Skor tidak boleh ditampilkan atau dipahami sebagai kepastian seseorang menderita penyakit tertentu.
+- Gejala yang tidak dikenali atau input yang belum cukup harus diperbaiki/ditanyakan; model tidak seharusnya memberi label penyakit seolah pasti.
+- Nyeri dada berat, kesulitan bernapas berat, penurunan kesadaran, atau gejala gawat lain memerlukan pertolongan medis segera. Jangan menunggu keluaran aplikasi.
+- Dataset dan metrik saat ini tidak membuktikan akurasi pada pasien nyata. Sebelum penggunaan klinis diperlukan data representatif, validasi eksternal, kalibrasi, tinjauan tenaga kesehatan, pengujian bias, dan penilaian risiko.
+
+## Evaluasi yang disarankan
+
+Jangan hanya melaporkan accuracy. Lihat macro-F1, weighted-F1, laporan per kelas, confusion matrix, kalibrasi, serta hasil pada data eksternal yang tidak digunakan saat training. Cross-validation pada script ini mengelompokkan kombinasi gejala identik agar kombinasi yang sama tidak tersebar di train dan validation; hal itu membantu mengurangi leakage, tetapi **tidak** menggantikan validasi eksternal.
+
+## Batasan
+
+Proyek ini adalah prototipe pembelajaran. Jangan menggunakannya untuk diagnosis mandiri, menentukan obat, menunda konsultasi, atau mengambil keputusan medis. Evaluasi kode yang baik sekalipun tidak cukup untuk menyatakan sistem aman secara klinis.
