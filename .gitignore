@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+
+# Generated model artifacts (keep the currently tracked models until migration)
+# models/*.joblib
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment and local configuration
+.env
+.env.*
+!.env.example
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
