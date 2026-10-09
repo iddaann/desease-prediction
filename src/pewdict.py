@@ -154,6 +154,19 @@ def predict_from_symptoms(symptoms, asked=None, top_k=3):
     valid_symptoms, unknown_symptoms = normalize_symptoms(symptoms, feature_cols)
     normalized_asked, _ = normalize_symptoms(asked, feature_cols)
 
+    # Jangan mengeluarkan label penyakit jika tidak ada gejala yang dikenali.
+    if not valid_symptoms:
+        return {
+            "prediksi_utama": "Belum cukup informasi",
+            "kandidat": [],
+            "gejala_tidak_dikenali": unknown_symptoms,
+            "next_question": None,
+            "catatan": (
+                "Belum ada gejala yang dikenali model. Pilih gejala yang tersedia "
+                "atau periksa ejaan; hasil aplikasi bukan diagnosis medis."
+            ),
+        }
+
     vector = pd.DataFrame(
         [[1 if column in valid_symptoms else 0 for column in feature_cols]],
         columns=feature_cols,
@@ -183,6 +196,10 @@ def predict_from_symptoms(symptoms, asked=None, top_k=3):
         "kandidat": candidates,
         "gejala_tidak_dikenali": unknown_symptoms,
         "next_question": next_question,
+        "catatan": (
+            "Skor model bukan probabilitas klinis yang tervalidasi dan tidak "
+            "menentukan apakah seseorang benar-benar menderita penyakit tersebut."
+        ),
     }
 
 
