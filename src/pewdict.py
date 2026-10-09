@@ -36,6 +36,8 @@ def _load_artifacts():
         ]
         if junk_cols:
             _training_data = _training_data.drop(columns=junk_cols)
+        # Samakan statistik follow-up dengan dataset training yang telah dideduplikasi.
+        _training_data = _training_data.drop_duplicates().reset_index(drop=True)
 
     return _model, _encoder, _feature_cols, _training_data
 
